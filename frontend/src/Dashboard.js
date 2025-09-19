@@ -10,7 +10,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import * as api from "./apiService"; // Importando nosso serviço
+import * as api from "./apiService";
+import BetForm from "./BetForm"; // Continuamos importando o BetForm
 
 ChartJS.register(
   CategoryScale,
@@ -22,8 +23,10 @@ ChartJS.register(
   Legend
 );
 
-const Dashboard = ({ stats }) => {
+const Dashboard = ({ stats, onSubmit }) => {
   const [history, setHistory] = useState([]);
+  // 1. Estado para controlar se o modal está aberto ou fechado
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -38,6 +41,14 @@ const Dashboard = ({ stats }) => {
     };
     fetchHistory();
   }, []);
+
+  const handleFormSubmit = async (formData) => {
+    const success = await onSubmit(formData);
+    if (success) {
+      setIsModalOpen(false); // Fecha o modal se o envio for bem-sucedido
+    }
+    return success;
+  };
 
   const chartData = {
     labels: history.map((h) => h.date),
@@ -54,9 +65,28 @@ const Dashboard = ({ stats }) => {
 
   return (
     <div>
-      <h2>Dashboard</h2>
-      <p>Banca Total: ${stats.totalBankroll}</p>
-      {/* O resto do seu componente JSX continua o mesmo */}
+      {/* 2. Botão para abrir o modal */}
+      <button className="add-bet-button" onClick={() => setIsModalOpen(true)}>
+        Adicionar Nova Aposta
+      </button>
+
+      {/* 3. Renderização condicional do Modal */}
+      {isModalOpen && (
+        <BetForm
+          onSubmit={handleFormSubmit}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+
+      <hr style={{ margin: "40px 0", border: "1px solid #eee" }} />
+
+      <h2>Estatísticas</h2>
+      {stats ? (
+        <p>Banca Total: ${stats.totalBankroll}</p>
+      ) : (
+        <p>Carregando estatísticas...</p>
+      )}
+
       <div className="chart-container">
         {history.length > 0 ? (
           <Line data={chartData} />

@@ -1,28 +1,24 @@
-body {
-  margin: 0;
-  font-family: sans-serif;
-}
-
 .container {
   display: flex;
-  height: 100vh;
 }
 
 .sidebar {
   width: 200px;
-  background-color: #f0f0f0;
+  background-color: #f4f4f4;
   padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  height: 100vh; /* Ocupa a altura toda */
 }
 
 .sidebar button {
+  display: block;
+  width: 100%;
   padding: 10px;
-  border: none;
+  margin-bottom: 10px;
   background-color: #ddd;
+  border: none;
   cursor: pointer;
   border-radius: 5px;
+  text-align: left;
 }
 
 .sidebar button:hover {
@@ -32,14 +28,110 @@ body {
 .content {
   flex-grow: 1;
   padding: 20px;
+  overflow-y: auto; /* Adiciona scroll se o conteúdo for grande */
+  height: 100vh;
 }
 
-.bankrolls-header {
+/* --- ESTILOS PARA O GRÁFICO --- */
+.chart-container {
+  max-width: 800px; /* Define a largura máxima */
+  max-height: 400px; /* Define a altura máxima */
+  margin: 40px auto; /* Adiciona margem e centraliza */
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* --- ESTILOS PARA O MODAL (POP-UP) E BOTÃO --- */
+
+.modal-overlay {
+  position: fixed; /* Fica por cima de todo o conteúdo */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7); /* Fundo escuro semi-transparente */
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  z-index: 1000; /* Garante que fique na frente de tudo */
 }
 
-.bankrolls-container {
-  padding-right: 3%;
+.modal-content {
+  background-color: white;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  position: relative;
+  width: 90%;
+  max-width: 700px; /* Largura máxima do modal */
+  max-height: 90vh; /* Altura máxima para não ocupar a tela toda */
+  overflow-y: auto; /* Adiciona rolagem se o conteúdo for muito grande */
 }
+
+.modal-content .close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #aaa;
+  line-height: 1;
+}
+.modal-content .close-button:hover {
+    color: #333;
+}
+
+/* Estilo para o botão de Adicionar Aposta */
+.add-bet-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #28a745; /* Cor verde */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.2s;
+}
+
+.add-bet-button:hover {
+  background-color: #218838;
+}
+
+/* Estilos para o formulário dentro do modal */
+.form-entry {
+  position: relative; /* Necessário para posicionar o botão de remover */
+  border: 1px solid #eee;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+}
+
+/* --- NOVO ESTILO PARA O BOTÃO DE REMOVER ENTRADA --- */
+.remove-entry-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ff4d4d; /* Cor vermelha */
+  color: white;
+  border: none;
+  border-radius: 50%; /* Deixa o botão redondo */
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 24px; /* Centraliza o 'X' verticalmente */
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s;
+}
+
+.remove-entry-button:hover {
+  background-color: #cc0000; /* Vermelho mais escuro ao passar o mouse */
+}
+

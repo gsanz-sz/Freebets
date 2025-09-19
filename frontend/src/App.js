@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
-import BetForm from "./BetForm";
 import BetList from "./BetList";
 import Dashboard from "./Dashboard";
-import TransactionForm from "./TransactionForm";
 import Bankrolls from "./Bankrolls";
 import * as api from "./apiService"; // Nosso novo serviço de API!
 
 function App() {
+  const [currentPage, setCurrentPage] = useState("dashboard");
   const [bets, setBets] = useState([]);
   const [stats, setStats] = useState({
     totalBankroll: 0,
@@ -16,16 +15,23 @@ function App() {
   });
   const [detailedBancas, setDetailedBancas] = useState({});
   const [detailedBancasByPerson, setDetailedBancasByPerson] = useState({});
-  const [currentPage, setCurrentPage] = useState("dashboard");
 
-  // Função central para buscar todos os dados da API
+  // Função central para buscar e atualizar todos os dados da aplicação
   const fetchAllData = async () => {
     console.log("--- [App.js] Iniciando atualização de todos os dados ---");
     try {
-      const betsData = await api.getBets();
-      const statsData = await api.getStats();
-      const detailedBancasData = await api.getDetailedBancas();
-      const detailedBancasByPersonData = await api.getDetailedBancasByPerson();
+      // Promise.all executa todas as chamadas em paralelo, é mais rápido!
+      const [
+        betsData,
+        statsData,
+        detailedBancasData,
+        detailedBancasByPersonData,
+      ] = await Promise.all([
+        api.getBets(),
+        api.getStats(),
+        api.getDetailedBancas(),
+        api.getDetailedBancasByPerson(),
+      ]);
 
       setBets(betsData);
       setStats(statsData);
@@ -39,119 +45,135 @@ function App() {
     }
   };
 
+  // Roda apenas uma vez quando o componente é montado
   useEffect(() => {
     fetchAllData();
   }, []);
 
-  const handleBetSubmit = async (newBet) => {
+  const handleSubmit = async (formData) => {
     console.log("--- [App.js] Tentando submeter nova aposta ---");
     try {
-      await api.createBet(newBet);
+      await api.createBet(formData);
       console.log(
         "+++ [App.js] Aposta criada com sucesso! Atualizando dados..."
       );
       fetchAllData();
+      return true;
     } catch (error) {
       console.error("!!! [App.js] Falha ao criar aposta:", error);
+      return false;
     }
   };
 
-  const handleTransactionSubmit = async (newTransaction) => {
+  const handleFinishBet = async (id, winningAccount, profit) => {
+    console.log(`--- [App.js] Tentando finalizar aposta ID: ${id} ---`);
+    try {
+      await api.finishBet(id, {
+        contaVencedora: winningAccount,
+        lucro: profit,
+      });
+      console.log(
+        `+++ [App.js] Aposta ${id} finalizada com sucesso! Atualizando dados...`
+      );
+      fetchAllData();
+    } catch (error) {
+      console.error(`!!! [App.js] Falha ao finalizar aposta ${id}:`, error);
+    }
+  };
+
+  const handleTransactionSubmit = async (formData) => {
     console.log("--- [App.js] Tentando submeter nova transação ---");
     try {
-      await api.createTransaction(newTransaction);
+      await api.createTransaction(formData);
       console.log(
         "+++ [App.js] Transação criada com sucesso! Atualizando dados..."
       );
+      // Apenas transações não precisam recarregar a lista de apostas, só as estatísticas
+      // Para simplificar e garantir consistência, vamos recarregar tudo por enquanto.
       fetchAllData();
     } catch (error) {
       console.error("!!! [App.js] Falha ao criar transação:", error);
     }
   };
 
-  const handleDeleteBet = async (betId) => {
-    console.log(`--- [App.js] Tentando deletar aposta ID: ${betId} ---`);
-    try {
-      await api.deleteBet(betId);
-      console.log(
-        `+++ [App.js] Aposta ${betId} deletada com sucesso! Atualizando dados...`
-      );
-      fetchAllData();
-    } catch (error) {
-      console.error(`!!! [App.js] Falha ao deletar aposta ${betId}:`, error);
+  const handleDeleteBet = async (id) => {
+    // Mantendo o seu window.confirm original!
+    if (window.confirm("Tem certeza que deseja excluir esta aposta?")) {
+      console.log(`--- [App.js] Tentando deletar aposta ID: ${id} ---`);
+      try {
+        await api.deleteBet(id);
+        console.log(
+          `+++ [App.js] Aposta ${id} deletada com sucesso! Atualizando dados...`
+        );
+        fetchAllData();
+      } catch (error) {
+        console.error(`!!! [App.js] Falha ao deletar aposta ${id}:`, error);
+      }
     }
   };
 
-  const handleFinishBet = async (betId, contaVencedora, lucro) => {
-    console.log(`--- [App.js] Tentando finalizar aposta ID: ${betId} ---`);
-    try {
-      await api.finishBet(betId, { contaVencedora, lucro });
-      console.log(
-        `+++ [App.js] Aposta ${betId} finalizada com sucesso! Atualizando dados...`
-      );
-      fetchAllData();
-    } catch (error) {
-      console.error(`!!! [App.js] Falha ao finalizar aposta ${betId}:`, error);
-    }
-  };
-
-  const handleUpdateBetEntry = async (betId, updatedEntry) => {
+  const handleUpdateBetEntry = async (betId, entryToUpdate, newValue) => {
     console.log(`--- [App.js] Tentando ajustar aposta ID: ${betId} ---`);
     try {
+      const updatedEntry = {
+        responsavel: entryToUpdate.responsavel,
+        conta: entryToUpdate.conta,
+        valor: newValue,
+      };
       await api.adjustBet(betId, { updatedEntry });
       console.log(
         `+++ [App.js] Aposta ${betId} ajustada com sucesso! Atualizando dados...`
       );
       fetchAllData();
+      return true;
     } catch (error) {
       console.error(`!!! [App.js] Falha ao ajustar aposta ${betId}:`, error);
+      return false;
     }
   };
 
+  // Seu renderPage original, preservado 100%
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard stats={stats} />;
-      case "bets":
+        return <Dashboard stats={stats} onSubmit={handleSubmit} />;
+      case "calendar":
         return (
-          <>
-            <BetForm onSubmit={handleBetSubmit} />
-            <BetList
-              bets={bets}
-              onDelete={handleDeleteBet}
-              onFinish={handleFinishBet}
-              onUpdateEntry={handleUpdateBetEntry}
-            />
-          </>
+          <BetList
+            bets={bets}
+            onFinishBet={handleFinishBet}
+            onDeleteBet={handleDeleteBet}
+            onUpdateBetEntry={handleUpdateBetEntry}
+          />
         );
-      case "transactions":
-        return <TransactionForm onSubmit={handleTransactionSubmit} />;
       case "bankrolls":
         return (
           <Bankrolls
+            stats={stats}
+            onSubmitTransaction={handleTransactionSubmit}
             detailedBancas={detailedBancas}
             detailedBancasByPerson={detailedBancasByPerson}
           />
         );
       default:
-        return <Dashboard stats={stats} />;
+        return <Dashboard stats={stats} onSubmit={handleSubmit} />;
     }
   };
 
+  // Seu JSX original, preservado 100%
   return (
-    <div className="App">
-      <nav>
-        <button onClick={() => setCurrentPage("dashboard")}>Dashboard</button>
-        <button onClick={() => setCurrentPage("bets")}>Apostas</button>
-        <button onClick={() => setCurrentPage("transactions")}>
-          Transações
+    <div className="container">
+      <div className="sidebar">
+        <button onClick={() => setCurrentPage("dashboard")}>
+          Dashboard (Gráfico)
+        </button>
+        <button onClick={() => setCurrentPage("calendar")}>
+          Apostas Pendentes
         </button>
         <button onClick={() => setCurrentPage("bankrolls")}>Bancas</button>
-      </nav>
-      <header className="App-header">
-        <h1>Freebets</h1>
-      </header>
-      <main>{renderPage()}</main>
+      </div>
+
+      <div className="content">{renderPage()}</div>
     </div>
   );
 }

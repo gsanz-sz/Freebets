@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-function BetForm({ onSubmit }) {
+function BetForm({ onSubmit, onClose }) {
   const [nomeAposta, setNomeAposta] = useState("");
   const [entries, setEntries] = useState([
-    { responsavel: "", account: "", valor: "", odd: "" },
+    { responsavel: "", conta: "", valor: "", odd: "" },
   ]);
 
   const accounts = [
@@ -38,181 +38,150 @@ function BetForm({ onSubmit }) {
   const handleEntryChange = (e, index) => {
     const { name, value } = e.target;
     const newEntries = [...entries];
-    newEntries[index] = {
-      ...newEntries[index],
-      [name]: value,
-    };
+    newEntries[index] = { ...newEntries[index], [name]: value };
     setEntries(newEntries);
   };
 
   const addEntry = () => {
     setEntries([
       ...entries,
-      { responsavel: "", account: "", valor: "", odd: "" },
+      { responsavel: "", conta: "", valor: "", odd: "" },
     ]);
   };
 
-  const handleRemoveEntry = (index) => {
-    const newEntries = entries.filter((_, i) => i !== index);
-    setEntries(newEntries);
+  // --- NOVA FUNÇÃO ---
+  // Função para remover uma entrada da lista pelo seu índice
+  const removeEntry = (indexToRemove) => {
+    // Só permite remover se houver mais de uma entrada
+    if (entries.length > 1) {
+      setEntries(entries.filter((_, index) => index !== indexToRemove));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const finalEntries = entries.filter((entry) => {
-      const isAccountValid =
-        entry.account && entry.account !== "Selecione a Conta";
-      const isValorValid = entry.valor && !isNaN(parseFloat(entry.valor));
-      const isOddValid = entry.odd && !isNaN(parseFloat(entry.odd));
-      const isResponsavelValid = entry.responsavel;
-
-      return isAccountValid && isValorValid && isOddValid && isResponsavelValid;
-    });
-
-    if (finalEntries.length === 0) {
-      alert("Por favor, preencha pelo menos uma aposta válida.");
-      return;
-    }
-
-    // Mapeia as entradas para o formato correto do backend
-    const entradasFormatadas = finalEntries.map((entry) => ({
-      responsavel: entry.responsavel,
-      conta: entry.account, // Nome do campo alterado para 'conta'
+    const formattedEntries = entries.map((entry) => ({
+      ...entry,
       valor: parseFloat(entry.valor),
       odd: parseFloat(entry.odd),
     }));
-
-    const newBet = {
+    const formData = {
       nomeAposta,
-      entradas: entradasFormatadas,
+      entradas: formattedEntries,
       finished: false,
     };
 
-    console.log("Dados que o front-end vai enviar:", newBet);
-    onSubmit(newBet);
+    const success = await onSubmit(formData);
 
-    setNomeAposta("");
-    setEntries([{ responsavel: "", account: "", valor: "", odd: "" }]);
+    if (success) {
+      onClose();
+    }
   };
 
   return (
-    <div>
-      <h1>Adicionar Nova Aposta</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>
-            Nome da Aposta:
-            <input
-              type="text"
-              name="nomeAposta"
-              value={nomeAposta}
-              onChange={(e) => setNomeAposta(e.target.value)}
-              required
-            />
-          </label>
-        </div>
-
-        {entries.map((entry, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid #ccc",
-              padding: "10px",
-              margin: "10px 0",
-              position: "relative",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => handleRemoveEntry(index)}
-              style={{
-                position: "absolute",
-                top: "5px",
-                right: "5px",
-                backgroundColor: "red",
-                color: "white",
-                border: "none",
-                borderRadius: "50%",
-                cursor: "pointer",
-                width: "25px",
-                height: "25px",
-              }}
-            >
-              X
-            </button>
-
-            <div>
-              <label>
-                Pessoa Responsável:
-                <select
-                  name="responsavel"
-                  value={entry.responsavel}
-                  onChange={(e) => handleEntryChange(e, index)}
-                  required
-                >
-                  <option value="">Selecione o Responsável</option>
-                  {responsaveis.map((resp) => (
-                    <option key={resp} value={resp}>
-                      {resp}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div>
-              <label>
-                Conta:
-                <select
-                  name="account"
-                  value={entry.account}
-                  onChange={(e) => handleEntryChange(e, index)}
-                  required
-                >
-                  <option value="">Selecione a Conta</option>
-                  {accounts.map((account) => (
-                    <option key={account} value={account}>
-                      {account}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div>
-              <label>
-                Valor Apostado:
-                <input
-                  type="number"
-                  name="valor"
-                  value={entry.valor}
-                  onChange={(e) => handleEntryChange(e, index)}
-                  required
-                />
-              </label>
-            </div>
-
-            <div>
-              <label>
-                Odd:
-                <input
-                  type="number"
-                  name="odd"
-                  value={entry.odd}
-                  onChange={(e) => handleEntryChange(e, index)}
-                  required
-                />
-              </label>
-            </div>
-          </div>
-        ))}
-
-        <button type="button" onClick={addEntry}>
-          Adicionar Outra Aposta
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <button className="close-button" onClick={onClose}>
+          &times;
         </button>
-        <button type="submit">Finalizar e Salvar Aposta</button>
-      </form>
+        <h2>Adicionar Nova Aposta</h2>
+        <form onSubmit={handleSubmit}>
+          <div>
+            <label>
+              Nome da Aposta:
+              <input
+                type="text"
+                name="nomeAposta"
+                value={nomeAposta}
+                onChange={(e) => setNomeAposta(e.target.value)}
+                required
+              />
+            </label>
+          </div>
+
+          {entries.map((entry, index) => (
+            <div key={index} className="form-entry">
+              {/* --- BOTÃO DE REMOVER ADICIONADO --- */}
+              {entries.length > 1 && (
+                <button
+                  type="button"
+                  className="remove-entry-button"
+                  onClick={() => removeEntry(index)}
+                >
+                  &times;
+                </button>
+              )}
+              <h4>Entrada {index + 1}</h4>
+              <div>
+                <label>
+                  Responsável:
+                  <select
+                    name="responsavel"
+                    value={entry.responsavel}
+                    onChange={(e) => handleEntryChange(e, index)}
+                    required
+                  >
+                    <option value="">Selecione o Responsável</option>
+                    {responsaveis.map((resp) => (
+                      <option key={resp} value={resp}>
+                        {resp}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label>
+                  Conta/Plataforma:
+                  <select
+                    name="conta"
+                    value={entry.conta}
+                    onChange={(e) => handleEntryChange(e, index)}
+                    required
+                  >
+                    <option value="">Selecione a Conta</option>
+                    {accounts.map((account) => (
+                      <option key={account} value={account}>
+                        {account}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label>
+                  Valor Apostado:
+                  <input
+                    type="number"
+                    name="valor"
+                    value={entry.valor}
+                    onChange={(e) => handleEntryChange(e, index)}
+                    required
+                  />
+                </label>
+              </div>
+              <div>
+                <label>
+                  Odd:
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="odd"
+                    value={entry.odd}
+                    onChange={(e) => handleEntryChange(e, index)}
+                    required
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+
+          <button type="button" onClick={addEntry}>
+            Adicionar Outra Entrada
+          </button>
+          <button type="submit">Finalizar e Salvar Aposta</button>
+        </form>
+      </div>
     </div>
   );
 }
