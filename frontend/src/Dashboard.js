@@ -11,7 +11,7 @@ import {
   Legend,
 } from "chart.js";
 import * as api from "./apiService";
-import BetForm from "./BetForm"; // Continuamos importando o BetForm
+import BetForm from "./BetForm";
 
 ChartJS.register(
   CategoryScale,
@@ -23,9 +23,8 @@ ChartJS.register(
   Legend
 );
 
-const Dashboard = ({ stats, onSubmit }) => {
+const Dashboard = ({ stats, onSubmit, bets }) => {
   const [history, setHistory] = useState([]);
-  // 1. Estado para controlar se o modal está aberto ou fechado
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -42,35 +41,35 @@ const Dashboard = ({ stats, onSubmit }) => {
     fetchHistory();
   }, []);
 
-  const handleFormSubmit = async (formData) => {
-    const success = await onSubmit(formData);
-    if (success) {
-      setIsModalOpen(false); // Fecha o modal se o envio for bem-sucedido
-    }
-    return success;
-  };
+  // Calcula estatísticas derivadas para os cards
+  const totalProfit = Object.values(stats.profitByAccount || {}).reduce(
+    (sum, profit) => sum + profit,
+    0
+  );
+  const totalBets = bets ? bets.length : 0;
+  const finishedBets = bets ? bets.filter((b) => b.finished).length : 0;
 
   const chartData = {
     labels: history.map((h) => h.date),
     datasets: [
       {
-        label: "Bankroll Over Time",
+        label: "Evolução da Banca",
         data: history.map((h) => h.bankroll),
-        fill: false,
-        backgroundColor: "rgb(75, 192, 192)",
-        borderColor: "rgba(75, 192, 192, 0.2)",
+        fill: true,
+        backgroundColor: "rgba(52, 152, 219, 0.2)",
+        borderColor: "rgba(52, 152, 219, 1)",
+        tension: 0.1,
       },
     ],
   };
 
-  return (
-    <div>
-      {/* 2. Botão para abrir o modal */}
-      <button className="add-bet-button" onClick={() => setIsModalOpen(true)}>
-        Adicionar Nova Aposta
-      </button>
+  const handleFormSubmit = async (formData) => {
+    await onSubmit(formData); // Chama a função do App.js
+    setIsModalOpen(false); // Fecha o modal após o envio
+  };
 
-      {/* 3. Renderização condicional do Modal */}
+  return (
+    <div className="dashboard-container">
       {isModalOpen && (
         <BetForm
           onSubmit={handleFormSubmit}
@@ -78,14 +77,39 @@ const Dashboard = ({ stats, onSubmit }) => {
         />
       )}
 
-      <hr style={{ margin: "40px 0", border: "1px solid #eee" }} />
+      <div className="dashboard-header">
+        <h2>Visão Geral</h2>
+        <button onClick={() => setIsModalOpen(true)} className="add-bet-btn">
+          Adicionar Nova Aposta
+        </button>
+      </div>
 
-      <h2>Estatísticas</h2>
-      {stats ? (
-        <p>Banca Total: ${stats.totalBankroll}</p>
-      ) : (
-        <p>Carregando estatísticas...</p>
-      )}
+      <div className="stats-cards">
+        <div className="stat-card">
+          <h3>Banca Total</h3>
+          <p className="stat-value-positive">
+            R$ {parseFloat(stats.totalBankroll).toFixed(2)}
+          </p>
+        </div>
+        <div className="stat-card">
+          <h3>Lucro Total</h3>
+          <p
+            className={
+              totalProfit >= 0 ? "stat-value-positive" : "stat-value-negative"
+            }
+          >
+            R$ {totalProfit.toFixed(2)}
+          </p>
+        </div>
+        <div className="stat-card">
+          <h3>Total de Apostas</h3>
+          <p className="stat-value">{totalBets}</p>
+        </div>
+        <div className="stat-card">
+          <h3>Apostas Finalizadas</h3>
+          <p className="stat-value">{finishedBets}</p>
+        </div>
+      </div>
 
       <div className="chart-container">
         {history.length > 0 ? (

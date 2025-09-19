@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
+
 import BetList from "./BetList";
 import Dashboard from "./Dashboard";
 import Bankrolls from "./Bankrolls";
-import * as api from "./apiService"; // Nosso novo serviço de API!
+import * as api from "./apiService";
 
 function App() {
-  const [currentPage, setCurrentPage] = useState("dashboard");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [bets, setBets] = useState([]);
   const [stats, setStats] = useState({
     totalBankroll: 0,
@@ -15,12 +17,13 @@ function App() {
   });
   const [detailedBancas, setDetailedBancas] = useState({});
   const [detailedBancasByPerson, setDetailedBancasByPerson] = useState({});
+  const [currentPage, setCurrentPage] = useState("dashboard");
 
-  // Função central para buscar e atualizar todos os dados da aplicação
   const fetchAllData = async () => {
     console.log("--- [App.js] Iniciando atualização de todos os dados ---");
+    setLoading(true);
+    setError(null);
     try {
-      // Promise.all executa todas as chamadas em paralelo, é mais rápido!
       const [
         betsData,
         statsData,
@@ -40,103 +43,84 @@ function App() {
       console.log(
         "+++ [App.js] Todos os dados foram atualizados com sucesso! +++"
       );
-    } catch (error) {
-      console.error("!!! [App.js] Falha ao buscar dados da API:", error);
+    } catch (err) {
+      console.error("!!! [App.js] Falha ao buscar dados da API:", err);
+      setError(
+        "Não foi possível carregar os dados. Verifique o servidor e tente novamente."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Roda apenas uma vez quando o componente é montado
   useEffect(() => {
     fetchAllData();
   }, []);
 
-  const handleSubmit = async (formData) => {
-    console.log("--- [App.js] Tentando submeter nova aposta ---");
+  const handleAction = async (action, successMessage, errorMessage) => {
+    console.log(`--- [App.js] Executando ação: ${successMessage} ---`);
+    setLoading(true);
+    setError(null);
     try {
-      await api.createBet(formData);
-      console.log(
-        "+++ [App.js] Aposta criada com sucesso! Atualizando dados..."
-      );
-      fetchAllData();
-      return true;
-    } catch (error) {
-      console.error("!!! [App.js] Falha ao criar aposta:", error);
-      return false;
+      await action();
+      console.log(`+++ [App.js] Ação executada com sucesso! +++`);
+      await fetchAllData();
+    } catch (err) {
+      console.error(`!!! [App.js] Falha ao executar ação:`, err);
+      setError(`${errorMessage}. Por favor, tente novamente.`);
+      // Mantém o loading ativo se a busca falhar, para que o usuário veja o erro.
+      // A busca de dados (fetchAllData) já lida com o estado de loading no final.
     }
   };
 
-  const handleFinishBet = async (id, winningAccount, profit) => {
-    console.log(`--- [App.js] Tentando finalizar aposta ID: ${id} ---`);
-    try {
-      await api.finishBet(id, {
-        contaVencedora: winningAccount,
-        lucro: profit,
-      });
-      console.log(
-        `+++ [App.js] Aposta ${id} finalizada com sucesso! Atualizando dados...`
-      );
-      fetchAllData();
-    } catch (error) {
-      console.error(`!!! [App.js] Falha ao finalizar aposta ${id}:`, error);
-    }
+  const handleBetSubmit = (newBet) => {
+    handleAction(
+      () => api.createBet(newBet),
+      "Aposta criada com sucesso!",
+      "Falha ao criar aposta"
+    );
   };
 
-  const handleTransactionSubmit = async (formData) => {
-    console.log("--- [App.js] Tentando submeter nova transação ---");
-    try {
-      await api.createTransaction(formData);
-      console.log(
-        "+++ [App.js] Transação criada com sucesso! Atualizando dados..."
-      );
-      // Apenas transações não precisam recarregar a lista de apostas, só as estatísticas
-      // Para simplificar e garantir consistência, vamos recarregar tudo por enquanto.
-      fetchAllData();
-    } catch (error) {
-      console.error("!!! [App.js] Falha ao criar transação:", error);
-    }
+  const handleTransactionSubmit = (newTransaction) => {
+    handleAction(
+      () => api.createTransaction(newTransaction),
+      "Transação criada com sucesso!",
+      "Falha ao criar transação"
+    );
   };
 
-  const handleDeleteBet = async (id) => {
-    // Mantendo o seu window.confirm original!
+  const handleDeleteBet = (betId) => {
     if (window.confirm("Tem certeza que deseja excluir esta aposta?")) {
-      console.log(`--- [App.js] Tentando deletar aposta ID: ${id} ---`);
-      try {
-        await api.deleteBet(id);
-        console.log(
-          `+++ [App.js] Aposta ${id} deletada com sucesso! Atualizando dados...`
-        );
-        fetchAllData();
-      } catch (error) {
-        console.error(`!!! [App.js] Falha ao deletar aposta ${id}:`, error);
-      }
-    }
-  };
-
-  const handleUpdateBetEntry = async (betId, entryToUpdate, newValue) => {
-    console.log(`--- [App.js] Tentando ajustar aposta ID: ${betId} ---`);
-    try {
-      const updatedEntry = {
-        responsavel: entryToUpdate.responsavel,
-        conta: entryToUpdate.conta,
-        valor: newValue,
-      };
-      await api.adjustBet(betId, { updatedEntry });
-      console.log(
-        `+++ [App.js] Aposta ${betId} ajustada com sucesso! Atualizando dados...`
+      handleAction(
+        () => api.deleteBet(betId),
+        `Aposta ${betId} deletada!`,
+        `Falha ao deletar aposta ${betId}`
       );
-      fetchAllData();
-      return true;
-    } catch (error) {
-      console.error(`!!! [App.js] Falha ao ajustar aposta ${betId}:`, error);
-      return false;
     }
   };
 
-  // Seu renderPage original, preservado 100%
+  const handleFinishBet = (betId, contaVencedora, lucro) => {
+    handleAction(
+      () => api.finishBet(betId, { contaVencedora, lucro }),
+      `Aposta ${betId} finalizada!`,
+      `Falha ao finalizar aposta ${betId}`
+    );
+  };
+
+  const handleUpdateBetEntry = (betId, updatedEntry) => {
+    handleAction(
+      () => api.adjustBet(betId, { updatedEntry }),
+      `Aposta ${betId} ajustada!`,
+      `Falha ao ajustar aposta ${betId}`
+    );
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard stats={stats} onSubmit={handleSubmit} />;
+        return (
+          <Dashboard stats={stats} onSubmit={handleBetSubmit} bets={bets} />
+        );
       case "calendar":
         return (
           <BetList
@@ -156,13 +140,29 @@ function App() {
           />
         );
       default:
-        return <Dashboard stats={stats} onSubmit={handleSubmit} />;
+        return (
+          <Dashboard stats={stats} onSubmit={handleBetSubmit} bets={bets} />
+        );
     }
   };
 
-  // Seu JSX original, preservado 100%
   return (
     <div className="container">
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
+
+      {error && (
+        <div className="error-notification">
+          {error}
+          <button onClick={() => setError(null)} className="close-error-btn">
+            &times;
+          </button>
+        </div>
+      )}
+
       <div className="sidebar">
         <button onClick={() => setCurrentPage("dashboard")}>
           Dashboard (Gráfico)
