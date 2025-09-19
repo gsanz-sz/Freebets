@@ -2,87 +2,86 @@ const express = require("express");
 const router = express.Router();
 const Bet = require("../models/bet");
 const Transaction = require("../models/transaction");
-const { betSchema } = require("../validators/betValidator");
+const asyncHandler = require("express-async-handler");
+const {
+  betSchema,
+  finishBetSchema,
+  adjustBetSchema,
+} = require("../validators/betValidator");
 
 // --- MIDDLEWARE ---
-async function getBet(req, res, next) {
-  let bet;
-  try {
-    bet = await Bet.findById(req.params.id);
-    if (bet == null) {
-      return res.status(404).json({ message: "Aposta não encontrada." });
-    }
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
+const getBet = asyncHandler(async (req, res, next) => {
+  const bet = await Bet.findById(req.params.id);
+  if (bet == null) {
+    res.status(404);
+    throw new Error("Aposta não encontrada.");
   }
   res.locals.bet = bet;
   next();
-}
+});
 
 // --- ROTAS DE APOSTAS (BETS) ---
 
-// Rota para obter todas as apostas
-router.get("/bets", async (req, res) => {
-  try {
+router.get(
+  "/bets",
+  asyncHandler(async (req, res) => {
     const bets = await Bet.find();
     res.status(200).json(bets);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
-// Rota para criar uma nova aposta
-router.post("/bets", async (req, res) => {
-  console.log("-------------------------------------------");
-  console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: POST /api/bets");
-  console.log(">>> Corpo da requisição recebido:", req.body);
-  console.log("-------------------------------------------");
-  try {
+router.post(
+  "/bets",
+  asyncHandler(async (req, res) => {
+    console.log("-------------------------------------------");
+    console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: POST /api/bets");
+    console.log(">>> Corpo da requisição recebido:", req.body);
+    console.log("-------------------------------------------");
+
     const { error, value } = betSchema.validate(req.body);
     if (error) {
-      console.error("!!! ERRO DE VALIDAÇÃO DO JOI:", error.details[0].message);
-      return res.status(400).json({ message: error.details[0].message });
+      res.status(400);
+      throw new Error(error.details[0].message);
     }
     const newBet = new Bet(value);
     const savedBet = await newBet.save();
     console.log("+++ Aposta salva no banco de dados com sucesso!");
     res.status(201).json(savedBet);
-  } catch (err) {
-    console.error("!!! ERRO CAPTURADO NO BLOCO CATCH:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
+  })
+);
 
-// Rota para excluir uma aposta
-router.delete("/bets/:id", getBet, async (req, res) => {
-  // --- RASTREADORES PARA DEBUG ---
-  console.log("-------------------------------------------");
-  console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: DELETE /api/bets/:id");
-  console.log(">>> ID da Aposta para deletar:", req.params.id);
-  console.log("-------------------------------------------");
-  try {
+router.delete(
+  "/bets/:id",
+  getBet,
+  asyncHandler(async (req, res) => {
+    console.log("-------------------------------------------");
+    console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: DELETE /api/bets/:id");
+    console.log(">>> ID da Aposta para deletar:", req.params.id);
+    console.log("-------------------------------------------");
+
     await res.locals.bet.deleteOne();
     console.log(`+++ Aposta com ID ${req.params.id} foi excluída com sucesso.`);
     res.status(200).json({ message: "Aposta excluída com sucesso." });
-  } catch (err) {
-    console.error(`!!! ERRO AO DELETAR APOSTA ${req.params.id}:`, err);
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
-// Rota para ajustar o valor de uma entrada em uma aposta pendente
-router.put("/bets/adjust/:id", getBet, async (req, res) => {
-  // --- RASTREADORES PARA DEBUG ---
-  console.log("-------------------------------------------");
-  console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: PUT /api/bets/adjust/:id");
-  console.log(">>> ID da Aposta para ajustar:", req.params.id);
-  console.log(">>> Dados de ajuste recebidos:", req.body);
-  console.log("-------------------------------------------");
+router.put(
+  "/bets/adjust/:id",
+  getBet,
+  asyncHandler(async (req, res) => {
+    console.log("-------------------------------------------");
+    console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: PUT /api/bets/adjust/:id");
+    console.log(">>> Dados de ajuste recebidos:", req.body);
+    console.log("-------------------------------------------");
 
-  const { updatedEntry } = req.body;
-  const bet = res.locals.bet;
+    const { error, value } = adjustBetSchema.validate(req.body);
+    if (error) {
+      res.status(400);
+      throw new Error(error.details[0].message);
+    }
 
-  try {
+    const { updatedEntry } = value;
+    const bet = res.locals.bet;
     const entryIndex = bet.entradas.findIndex(
       (entry) =>
         entry.responsavel === updatedEntry.responsavel &&
@@ -90,73 +89,56 @@ router.put("/bets/adjust/:id", getBet, async (req, res) => {
     );
 
     if (entryIndex === -1) {
-      console.error(
-        `!!! Entrada não encontrada para ajuste na aposta ${req.params.id}.`
-      );
-      return res
-        .status(404)
-        .json({ message: "Entrada da aposta não encontrada." });
+      res.status(404);
+      throw new Error("Entrada da aposta não encontrada para ajuste.");
     }
 
     bet.entradas[entryIndex].valor = parseFloat(updatedEntry.valor);
-
     const updatedBet = await bet.save();
     console.log(`+++ Aposta com ID ${req.params.id} foi ajustada com sucesso.`);
     res.status(200).json(updatedBet);
-  } catch (err) {
-    console.error(`!!! ERRO AO AJUSTAR APOSTA ${req.params.id}:`, err);
-    res.status(500).json({ message: "Erro ao ajustar a aposta." });
-  }
-});
+  })
+);
 
-// Rota para finalizar uma aposta
-router.put("/bets/finish/:id", getBet, async (req, res) => {
-  // --- RASTREADORES PARA DEBUG ---
-  console.log("-------------------------------------------");
-  console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: PUT /api/bets/finish/:id");
-  console.log(">>> ID da Aposta para finalizar:", req.params.id);
-  console.log(">>> Dados de finalização recebidos:", req.body);
-  console.log("-------------------------------------------");
+router.put(
+  "/bets/finish/:id",
+  getBet,
+  asyncHandler(async (req, res) => {
+    console.log("-------------------------------------------");
+    console.log(">>> REQUISIÇÃO CHEGOU NA ROTA: PUT /api/bets/finish/:id");
+    console.log(">>> Dados de finalização recebidos:", req.body);
+    console.log("-------------------------------------------");
 
-  const { contaVencedora, lucro } = req.body;
-  const bet = res.locals.bet;
-
-  try {
-    if (contaVencedora && typeof lucro === "number") {
-      bet.finished = true;
-      bet.contaVencedora = contaVencedora;
-      bet.lucro = lucro;
-    } else {
-      console.error(
-        `!!! Dados inválidos para finalizar aposta ${req.params.id}.`
-      );
-      return res
-        .status(400)
-        .json({ message: "Dados de finalização inválidos." });
+    const { error, value } = finishBetSchema.validate(req.body);
+    if (error) {
+      res.status(400);
+      throw new Error(error.details[0].message);
     }
+
+    const { contaVencedora, lucro } = value;
+    const bet = res.locals.bet;
+    bet.finished = true;
+    bet.contaVencedora = contaVencedora;
+    bet.lucro = lucro;
 
     const updatedBet = await bet.save();
     console.log(
       `+++ Aposta com ID ${req.params.id} foi finalizada com sucesso.`
     );
     res.status(200).json(updatedBet);
-  } catch (err) {
-    console.error(`!!! ERRO AO FINALIZAR APOSTA ${req.params.id}:`, err);
-    res.status(500).json({ message: "Erro ao finalizar aposta." });
-  }
-});
+  })
+);
 
 // --- ROTAS DE ESTATÍSTICAS (STATS) ---
-// (O restante do arquivo continua o mesmo)
 
-// Rota para obter estatísticas da banca
-router.get("/stats", async (req, res) => {
-  try {
+router.get(
+  "/stats",
+  asyncHandler(async (req, res) => {
     const bets = await Bet.find();
     const transactions = await Transaction.find();
-
     let totalBankroll = 0;
     const profitByAccount = {};
+    const profitByResponsavel = {};
     const bankrollByPlatform = {};
 
     transactions.forEach((transacao) => {
@@ -173,6 +155,9 @@ router.get("/stats", async (req, res) => {
         totalInvestedInBet += entrada.valor;
         bankrollByPlatform[entrada.conta] =
           (bankrollByPlatform[entrada.conta] || 0) - entrada.valor;
+        if (!profitByResponsavel[entrada.responsavel]) {
+          profitByResponsavel[entrada.responsavel] = 0;
+        }
       });
 
       totalBankroll -= totalInvestedInBet;
@@ -180,27 +165,39 @@ router.get("/stats", async (req, res) => {
       if (bet.finished && typeof bet.lucro === "number") {
         const payout = bet.lucro + totalInvestedInBet;
         totalBankroll += payout;
-
         bankrollByPlatform[bet.contaVencedora] =
           (bankrollByPlatform[bet.contaVencedora] || 0) + payout;
         profitByAccount[bet.contaVencedora] =
           (profitByAccount[bet.contaVencedora] || 0) + bet.lucro;
+
+        const responsaveisNaAposta = new Set(
+          bet.entradas.map((e) => e.responsavel)
+        );
+        if (responsaveisNaAposta.size > 0) {
+          const lucroPorResponsavelNaAposta =
+            bet.lucro / responsaveisNaAposta.size;
+          responsaveisNaAposta.forEach((responsavel) => {
+            profitByResponsavel[responsavel] =
+              (profitByResponsavel[responsavel] || 0) +
+              lucroPorResponsavelNaAposta;
+          });
+        }
       }
     });
 
     res.status(200).json({
       totalBankroll: totalBankroll.toFixed(2),
       profitByAccount,
+      profitByResponsavel,
       bankrollByPlatform,
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
-// Rota para o histórico da banca
-router.get("/stats/history", async (req, res) => {
-  try {
+// --- ROTA DE HISTÓRICO ATUALIZADA ---
+router.get(
+  "/stats/history",
+  asyncHandler(async (req, res) => {
     const bets = await Bet.find().sort({ data: 1 });
     const transactions = await Transaction.find().sort({ data: 1 });
     const allEvents = [...bets, ...transactions].sort(
@@ -208,9 +205,22 @@ router.get("/stats/history", async (req, res) => {
     );
 
     let cumulativeBankroll = 0;
-    const bankrollHistory = [];
+    const profitHistoryByResponsavel = {};
+    const history = [];
+
+    // Inicializa todos os responsáveis
+    const allResponsaveis = new Set();
+    bets.forEach((bet) =>
+      bet.entradas.forEach((e) => allResponsaveis.add(e.responsavel))
+    );
+    transactions.forEach((t) => allResponsaveis.add(t.responsavel));
+    allResponsaveis.forEach((r) => {
+      if (r) profitHistoryByResponsavel[r] = 0;
+    });
 
     allEvents.forEach((event) => {
+      const eventDate = new Date(event.data).toISOString().split("T")[0];
+
       if (event.tipo) {
         // É uma transação
         cumulativeBankroll +=
@@ -224,40 +234,56 @@ router.get("/stats/history", async (req, res) => {
         cumulativeBankroll -= totalInvestedInBet;
         if (event.finished && typeof event.lucro === "number") {
           cumulativeBankroll += event.lucro + totalInvestedInBet;
+
+          const responsaveisNaAposta = new Set(
+            event.entradas.map((e) => e.responsavel)
+          );
+          if (responsaveisNaAposta.size > 0) {
+            const lucroPorResponsavelNaAposta =
+              event.lucro / responsaveisNaAposta.size;
+            responsaveisNaAposta.forEach((responsavel) => {
+              profitHistoryByResponsavel[responsavel] +=
+                lucroPorResponsavelNaAposta;
+            });
+          }
         }
       }
-      const eventDate = new Date(event.data);
-      bankrollHistory.push({
-        date: eventDate.toISOString().split("T")[0],
-        bankroll: cumulativeBankroll.toFixed(2),
-      });
-    });
-    res.status(200).json(bankrollHistory);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
-// Rota para obter o saldo detalhado de cada plataforma
-router.get("/stats/detailed-bancas", async (req, res) => {
-  try {
+      const dailyData = {
+        date: eventDate,
+        totalBankroll: cumulativeBankroll,
+        ...profitHistoryByResponsavel,
+      };
+
+      // Agrupa os dados por dia
+      const existingEntryIndex = history.findIndex((h) => h.date === eventDate);
+      if (existingEntryIndex > -1) {
+        history[existingEntryIndex] = dailyData;
+      } else {
+        history.push(dailyData);
+      }
+    });
+    res.status(200).json(history);
+  })
+);
+
+router.get(
+  "/stats/detailed-bancas",
+  asyncHandler(async (req, res) => {
     const bets = await Bet.find();
     const transactions = await Transaction.find();
     const detailedBancas = {};
-
     const initPlatform = (platform) => {
       if (!detailedBancas[platform]) {
         detailedBancas[platform] = { banca: 0, emAposta: 0 };
       }
     };
-
     transactions.forEach((transacao) => {
       initPlatform(transacao.plataforma);
       const valor =
         transacao.tipo === "deposito" ? transacao.valor : -transacao.valor;
       detailedBancas[transacao.plataforma].banca += valor;
     });
-
     bets.forEach((bet) => {
       let totalInvestidoNaAposta = 0;
       bet.entradas.forEach((entrada) => {
@@ -267,7 +293,6 @@ router.get("/stats/detailed-bancas", async (req, res) => {
         detailedBancas[entrada.conta].emAposta += valor;
         totalInvestidoNaAposta += valor;
       });
-
       if (bet.finished && typeof bet.lucro === "number") {
         initPlatform(bet.contaVencedora);
         detailedBancas[bet.contaVencedora].emAposta -= totalInvestidoNaAposta;
@@ -276,24 +301,20 @@ router.get("/stats/detailed-bancas", async (req, res) => {
       }
     });
     res.status(200).json(detailedBancas);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
-// Nova rota para obter o saldo detalhado por pessoa e plataforma
-router.get("/stats/detailed-bancas-by-person", async (req, res) => {
-  try {
+router.get(
+  "/stats/detailed-bancas-by-person",
+  asyncHandler(async (req, res) => {
     const bets = await Bet.find();
     const transactions = await Transaction.find();
     const detailedBancas = {};
-
     const initPersonPlatform = (person, platform) => {
       if (!detailedBancas[person]) detailedBancas[person] = {};
       if (!detailedBancas[person][platform])
         detailedBancas[person][platform] = { banca: 0, emAposta: 0 };
     };
-
     transactions.forEach((transacao) => {
       initPersonPlatform(transacao.responsavel, transacao.plataforma);
       const valor =
@@ -301,7 +322,6 @@ router.get("/stats/detailed-bancas-by-person", async (req, res) => {
       detailedBancas[transacao.responsavel][transacao.plataforma].banca +=
         valor;
     });
-
     bets.forEach((bet) => {
       bet.entradas.forEach((entrada) => {
         initPersonPlatform(entrada.responsavel, entrada.conta);
@@ -309,13 +329,11 @@ router.get("/stats/detailed-bancas-by-person", async (req, res) => {
         detailedBancas[entrada.responsavel][entrada.conta].banca -= valor;
         detailedBancas[entrada.responsavel][entrada.conta].emAposta += valor;
       });
-
       if (bet.finished && typeof bet.lucro === "number") {
         bet.entradas.forEach((entrada) => {
           initPersonPlatform(entrada.responsavel, entrada.conta);
           const valor = parseFloat(entrada.valor);
           detailedBancas[entrada.responsavel][entrada.conta].emAposta -= valor;
-
           if (entrada.conta === bet.contaVencedora) {
             const payout = entrada.odd * valor;
             detailedBancas[entrada.responsavel][entrada.conta].banca += payout;
@@ -324,9 +342,7 @@ router.get("/stats/detailed-bancas-by-person", async (req, res) => {
       }
     });
     res.status(200).json(detailedBancas);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  })
+);
 
 module.exports = router;

@@ -1,24 +1,40 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
+// Esquema para criar uma nova aposta (já existente)
 const betSchema = Joi.object({
-    // 'nomeAposta' é uma string, sem espaços extras no início/fim, e é obrigatório.
-    nomeAposta: Joi.string().trim().required(),
+  nomeAposta: Joi.string().trim().required(),
+  entradas: Joi.array()
+    .items(
+      Joi.object({
+        responsavel: Joi.string().required(),
+        conta: Joi.string().required(),
+        valor: Joi.number().positive().required(),
+        odd: Joi.number().positive().required(),
+      })
+    )
+    .min(1)
+    .required(),
+  finished: Joi.boolean().optional(),
+});
 
-    // 'entradas' deve ser um array de objetos e é obrigatório.
-    entradas: Joi.array().items(
-        Joi.object({
-            // Cada entrada deve ter esses campos
-            responsavel: Joi.string().required(),   // <-- CORRIGIDO
-            conta: Joi.string().required(),         // <-- CORRIGIDO
-            valor: Joi.number().positive().required(),
-            odd: Joi.number().positive().required()
-        })
-    ).min(1).required(), // O array de entradas deve ter pelo menos 1 item.
-    
-    // O campo finished não é obrigatório no envio inicial
-    finished: Joi.boolean().optional()
+// --- NOVO ESQUEMA PARA FINALIZAR UMA APOSTA ---
+const finishBetSchema = Joi.object({
+  // Exige que a conta vencedora seja uma string e o lucro seja um número
+  contaVencedora: Joi.string().required(),
+  lucro: Joi.number().required(),
+});
+
+// --- NOVO ESQUEMA PARA AJUSTAR UMA ENTRADA ---
+const adjustBetSchema = Joi.object({
+  updatedEntry: Joi.object({
+    responsavel: Joi.string().required(),
+    conta: Joi.string().required(),
+    valor: Joi.number().positive().required(), // Garante que o novo valor seja um número positivo
+  }).required(),
 });
 
 module.exports = {
-    betSchema
+  betSchema,
+  finishBetSchema,
+  adjustBetSchema,
 };

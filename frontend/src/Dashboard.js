@@ -23,17 +23,28 @@ ChartJS.register(
   Legend
 );
 
+// Função para gerar cores consistentes para os responsáveis
+const getColorForResponsavel = (responsavel, index) => {
+  const colors = [
+    "rgba(231, 76, 60, 1)", // Vermelho
+    "rgba(52, 152, 219, 1)", // Azul
+    "rgba(46, 204, 113, 1)", // Verde
+    "rgba(241, 196, 15, 1)", // Amarelo
+    "rgba(155, 89, 182, 1)", // Roxo
+  ];
+  return colors[index % colors.length];
+};
+
 const Dashboard = ({ stats, onSubmit, bets }) => {
   const [history, setHistory] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [chartData, setChartData] = useState({ labels: [], datasets: [] });
 
   useEffect(() => {
     const fetchHistory = async () => {
-      console.log("--- [Dashboard.js] Buscando histórico para o gráfico ---");
       try {
         const historyData = await api.getHistory();
         setHistory(historyData);
-        console.log("+++ [Dashboard.js] Histórico carregado com sucesso! +++");
       } catch (error) {
         console.error("!!! [Dashboard.js] Falha ao buscar histórico:", error);
       }
@@ -41,7 +52,45 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
     fetchHistory();
   }, []);
 
-  // Calcula estatísticas derivadas para os cards
+  // Efeito para construir os dados do gráfico quando o histórico muda
+  useEffect(() => {
+    if (history.length > 0) {
+      const labels = history.map((h) => h.date);
+      const datasets = [];
+
+      // Adiciona a linha da Banca Total
+      datasets.push({
+        label: "Banca Total",
+        data: history.map((h) => parseFloat(h.totalBankroll).toFixed(2)),
+        borderColor: "rgba(44, 62, 80, 1)", // Cor mais escura para destaque
+        backgroundColor: "rgba(44, 62, 80, 0.1)",
+        fill: true,
+        tension: 0.1,
+        yAxisID: "y-bankroll", // Associa a um eixo Y
+      });
+
+      // Adiciona uma linha para cada responsável
+      const responsaveis = Object.keys(history[0] || {}).filter(
+        (key) => key !== "date" && key !== "totalBankroll"
+      );
+
+      responsaveis.forEach((responsavel, index) => {
+        const color = getColorForResponsavel(responsavel, index);
+        datasets.push({
+          label: `Lucro ${responsavel}`,
+          data: history.map((h) => parseFloat(h[responsavel]).toFixed(2)),
+          borderColor: color,
+          backgroundColor: color.replace("1)", "0.1)"),
+          fill: false,
+          tension: 0.1,
+          yAxisID: "y-profit", // Associa a outro eixo Y
+        });
+      });
+
+      setChartData({ labels, datasets });
+    }
+  }, [history]);
+
   const totalProfit = Object.values(stats.profitByAccount || {}).reduce(
     (sum, profit) => sum + profit,
     0
@@ -49,23 +98,46 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
   const totalBets = bets ? bets.length : 0;
   const finishedBets = bets ? bets.filter((b) => b.finished).length : 0;
 
-  const chartData = {
-    labels: history.map((h) => h.date),
-    datasets: [
-      {
-        label: "Evolução da Banca",
-        data: history.map((h) => h.bankroll),
-        fill: true,
-        backgroundColor: "rgba(52, 152, 219, 0.2)",
-        borderColor: "rgba(52, 152, 219, 1)",
-        tension: 0.1,
-      },
-    ],
+  const handleFormSubmit = async (formData) => {
+    await onSubmit(formData);
+    setIsModalOpen(false);
   };
 
-  const handleFormSubmit = async (formData) => {
-    await onSubmit(formData); // Chama a função do App.js
-    setIsModalOpen(false); // Fecha o modal após o envio
+  // Opções do Gráfico para adicionar um segundo eixo Y
+  const chartOptions = {
+    responsive: true,
+    interaction: {
+      mode: "index",
+      intersect: false,
+    },
+    scales: {
+      y: {
+        type: "linear",
+        display: false, // Oculta o eixo principal para evitar confusão visual
+        position: "left",
+      },
+      "y-bankroll": {
+        type: "linear",
+        display: true,
+        position: "left",
+        title: {
+          display: true,
+          text: "Banca Total (R$)",
+        },
+      },
+      "y-profit": {
+        type: "linear",
+        display: true,
+        position: "right",
+        title: {
+          display: true,
+          text: "Lucro Individual (R$)",
+        },
+        grid: {
+          drawOnChartArea: false, // Não desenha a grelha para o eixo de lucro
+        },
+      },
+    },
   };
 
   return (
@@ -78,7 +150,6 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
       )}
 
       <div className="dashboard-header">
-        <h2>Visão Geral</h2>
         <button onClick={() => setIsModalOpen(true)} className="add-bet-btn">
           Adicionar Nova Aposta
         </button>
@@ -112,11 +183,36 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
       </div>
 
       <div className="chart-container">
-        {history.length > 0 ? (
-          <Line data={chartData} />
+        {chartData.datasets.length > 0 ? (
+          <Line data={chartData} options={chartOptions} />
         ) : (
-          <p>Carregando histórico do gráfico...</p>
+          <p>A carregar o histórico do gráfico...</p>
         )}
+      </div>
+
+      <div className="profit-by-person-card">
+        <h3>Lucro por Responsável</h3>
+        <ul>
+          {stats.profitByResponsavel &&
+          Object.keys(stats.profitByResponsavel).length > 0 ? (
+            Object.entries(stats.profitByResponsavel).map(
+              ([responsavel, lucro]) => (
+                <li key={responsavel}>
+                  <span>{responsavel}</span>
+                  <span
+                    className={
+                      lucro >= 0 ? "stat-value-positive" : "stat-value-negative"
+                    }
+                  >
+                    R$ {lucro.toFixed(2)}
+                  </span>
+                </li>
+              )
+            )
+          ) : (
+            <p className="no-data-message">Nenhum lucro a ser exibido.</p>
+          )}
+        </ul>
       </div>
     </div>
   );

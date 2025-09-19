@@ -1,10 +1,23 @@
-import { useState } from "react";
+import React from "react";
+import { useForm, useFieldArray } from "react-hook-form";
 
 function BetForm({ onSubmit, onClose }) {
-  const [nomeAposta, setNomeAposta] = useState("");
-  const [entries, setEntries] = useState([
-    { responsavel: "", conta: "", valor: "", odd: "" },
-  ]);
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      nomeAposta: "",
+      entradas: [{ responsavel: "", conta: "", valor: "", odd: "" }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "entradas",
+  });
 
   const accounts = [
     "Betano",
@@ -35,135 +48,145 @@ function BetForm({ onSubmit, onClose }) {
   ];
   const responsaveis = ["Gabriel", "Giovanna", "Leleco"];
 
-  const handleEntryChange = (e, index) => {
-    const { name, value } = e.target;
-    const newEntries = [...entries];
-    newEntries[index] = { ...newEntries[index], [name]: value };
-    setEntries(newEntries);
-  };
-
-  const addEntry = () => {
-    setEntries([
-      ...entries,
-      { responsavel: "", conta: "", valor: "", odd: "" },
-    ]);
-  };
-
-  const removeEntry = (index) => {
-    const newEntries = entries.filter((_, i) => i !== index);
-    setEntries(newEntries);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const entradasFormatadas = entries.map((entry) => ({
-      ...entry,
-      valor: parseFloat(entry.valor),
-      odd: parseFloat(entry.odd),
-    }));
-    onSubmit({ nomeAposta, entradas: entradasFormatadas, finished: false });
+  const onFormSubmit = (data) => {
+    const formattedData = {
+      ...data,
+      entradas: data.entradas.map((entry) => ({
+        ...entry,
+        valor: parseFloat(entry.valor),
+        odd: parseFloat(entry.odd),
+      })),
+      finished: false,
+    };
+    onSubmit(formattedData);
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <button className="close-modal-btn" onClick={onClose}>
-          &times;
-        </button>
-        <form onSubmit={handleSubmit} className="bet-form">
-          <h2>Nova Aposta</h2>
+        <form className="bet-form" onSubmit={handleSubmit(onFormSubmit)}>
+          <button type="button" onClick={onClose} className="close-modal-btn">
+            &times;
+          </button>
+          <h2>Adicionar Nova Aposta</h2>
 
           <div className="form-group">
-            <label htmlFor="nomeAposta">Nome da Aposta</label>
+            <label>Nome da Aposta</label>
             <input
-              id="nomeAposta"
-              type="text"
               className="form-input"
-              value={nomeAposta}
-              onChange={(e) => setNomeAposta(e.target.value)}
-              placeholder="Ex: Real Madrid x Barcelona"
-              required
+              {...register("nomeAposta", {
+                required: "O nome da aposta é obrigatório.",
+              })}
             />
+            {errors.nomeAposta && (
+              <p className="error-message">{errors.nomeAposta.message}</p>
+            )}
           </div>
 
           <hr className="form-divider" />
 
-          {entries.map((entry, index) => (
-            <div key={index} className="entry-container">
+          {fields.map((item, index) => (
+            <div key={item.id} className="entry-container">
               <div className="entry-header">
                 <h4>Entrada {index + 1}</h4>
-                {entries.length > 1 && (
+                {fields.length > 1 && (
                   <button
                     type="button"
-                    onClick={() => removeEntry(index)}
                     className="remove-entry-btn"
+                    onClick={() => remove(index)}
                   >
                     &times;
                   </button>
                 )}
               </div>
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Responsável</label>
                   <select
-                    name="responsavel"
-                    value={entry.responsavel}
-                    onChange={(e) => handleEntryChange(e, index)}
-                    required
                     className="form-select"
+                    {...register(`entradas.${index}.responsavel`, {
+                      required: "Selecione um responsável.",
+                    })}
                   >
-                    <option value="">Selecione</option>
+                    <option value="">Selecione...</option>
                     {responsaveis.map((r) => (
                       <option key={r} value={r}>
                         {r}
                       </option>
                     ))}
                   </select>
+                  {errors.entradas?.[index]?.responsavel && (
+                    <p className="error-message">
+                      {errors.entradas[index].responsavel.message}
+                    </p>
+                  )}
                 </div>
                 <div className="form-group">
-                  <label>Conta</label>
+                  <label>Conta/Casa</label>
                   <select
-                    name="conta"
-                    value={entry.conta}
-                    onChange={(e) => handleEntryChange(e, index)}
-                    required
                     className="form-select"
+                    {...register(`entradas.${index}.conta`, {
+                      required: "Selecione uma conta.",
+                    })}
                   >
-                    <option value="">Selecione</option>
-                    {accounts.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
+                    <option value="">Selecione...</option>
+                    {accounts.map((acc) => (
+                      <option key={acc} value={acc}>
+                        {acc}
                       </option>
                     ))}
                   </select>
+                  {errors.entradas?.[index]?.conta && (
+                    <p className="error-message">
+                      {errors.entradas[index].conta.message}
+                    </p>
+                  )}
                 </div>
               </div>
+
               <div className="form-row">
                 <div className="form-group">
-                  <label>Valor</label>
+                  <label>Valor (R$)</label>
                   <input
-                    type="number"
-                    name="valor"
-                    value={entry.valor}
-                    onChange={(e) => handleEntryChange(e, index)}
-                    required
-                    step="0.01"
                     className="form-input"
-                    placeholder="0.00"
+                    type="number"
+                    step="0.01"
+                    {...register(`entradas.${index}.valor`, {
+                      required: "O valor é obrigatório.",
+                      valueAsNumber: true,
+                      min: {
+                        value: 0.01,
+                        message: "O valor deve ser positivo.",
+                      },
+                    })}
                   />
+                  {errors.entradas?.[index]?.valor && (
+                    <p className="error-message">
+                      {errors.entradas[index].valor.message}
+                    </p>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Odd</label>
                   <input
-                    type="number"
-                    name="odd"
-                    value={entry.odd}
-                    onChange={(e) => handleEntryChange(e, index)}
-                    required
-                    step="0.01"
                     className="form-input"
-                    placeholder="1.00"
+                    type="number"
+                    step="0.01"
+                    {...register(`entradas.${index}.odd`, {
+                      required: "A odd é obrigatória.",
+                      valueAsNumber: true,
+                      min: {
+                        value: 1.01,
+                        message: "A odd deve ser maior que 1.",
+                      },
+                    })}
                   />
+                  {errors.entradas?.[index]?.odd && (
+                    <p className="error-message">
+                      {errors.entradas[index].odd.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -172,8 +195,10 @@ function BetForm({ onSubmit, onClose }) {
           <div className="form-button-group">
             <button
               type="button"
-              onClick={addEntry}
               className="form-button secondary"
+              onClick={() =>
+                append({ responsavel: "", conta: "", valor: "", odd: "" })
+              }
             >
               Adicionar Entrada
             </button>

@@ -7,6 +7,7 @@ import Bankrolls from "./Bankrolls";
 import * as api from "./apiService";
 
 function App() {
+  const [currentPage, setCurrentPage] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bets, setBets] = useState([]);
@@ -14,13 +15,12 @@ function App() {
     totalBankroll: 0,
     profitByAccount: {},
     bankrollByPlatform: {},
+    profitByResponsavel: {},
   });
   const [detailedBancas, setDetailedBancas] = useState({});
   const [detailedBancasByPerson, setDetailedBancasByPerson] = useState({});
-  const [currentPage, setCurrentPage] = useState("dashboard");
 
   const fetchAllData = async () => {
-    console.log("--- [App.js] Iniciando atualização de todos os dados ---");
     setLoading(true);
     setError(null);
     try {
@@ -40,11 +40,7 @@ function App() {
       setStats(statsData);
       setDetailedBancas(detailedBancasData);
       setDetailedBancasByPerson(detailedBancasByPersonData);
-      console.log(
-        "+++ [App.js] Todos os dados foram atualizados com sucesso! +++"
-      );
     } catch (err) {
-      console.error("!!! [App.js] Falha ao buscar dados da API:", err);
       setError(
         "Não foi possível carregar os dados. Verifique o servidor e tente novamente."
       );
@@ -57,62 +53,42 @@ function App() {
     fetchAllData();
   }, []);
 
-  const handleAction = async (action, successMessage, errorMessage) => {
-    console.log(`--- [App.js] Executando ação: ${successMessage} ---`);
+  const handleAction = async (action) => {
     setLoading(true);
     setError(null);
     try {
       await action();
-      console.log(`+++ [App.js] Ação executada com sucesso! +++`);
       await fetchAllData();
     } catch (err) {
-      console.error(`!!! [App.js] Falha ao executar ação:`, err);
-      setError(`${errorMessage}. Por favor, tente novamente.`);
-      // Mantém o loading ativo se a busca falhar, para que o usuário veja o erro.
-      // A busca de dados (fetchAllData) já lida com o estado de loading no final.
+      setError(`${err.message}. Por favor, tente novamente.`);
     }
   };
 
   const handleBetSubmit = (newBet) => {
-    handleAction(
-      () => api.createBet(newBet),
-      "Aposta criada com sucesso!",
-      "Falha ao criar aposta"
-    );
+    handleAction(() => api.createBet(newBet));
   };
 
   const handleTransactionSubmit = (newTransaction) => {
-    handleAction(
-      () => api.createTransaction(newTransaction),
-      "Transação criada com sucesso!",
-      "Falha ao criar transação"
-    );
+    handleAction(() => api.createTransaction(newTransaction));
   };
 
   const handleDeleteBet = (betId) => {
     if (window.confirm("Tem certeza que deseja excluir esta aposta?")) {
-      handleAction(
-        () => api.deleteBet(betId),
-        `Aposta ${betId} deletada!`,
-        `Falha ao deletar aposta ${betId}`
-      );
+      handleAction(() => api.deleteBet(betId));
     }
   };
 
   const handleFinishBet = (betId, contaVencedora, lucro) => {
-    handleAction(
-      () => api.finishBet(betId, { contaVencedora, lucro }),
-      `Aposta ${betId} finalizada!`,
-      `Falha ao finalizar aposta ${betId}`
-    );
+    handleAction(() => api.finishBet(betId, { contaVencedora, lucro }));
   };
 
-  const handleUpdateBetEntry = (betId, updatedEntry) => {
-    handleAction(
-      () => api.adjustBet(betId, { updatedEntry }),
-      `Aposta ${betId} ajustada!`,
-      `Falha ao ajustar aposta ${betId}`
-    );
+  const handleUpdateBetEntry = (betId, entryToUpdate, newValue) => {
+    const updatedEntry = {
+      responsavel: entryToUpdate.responsavel,
+      conta: entryToUpdate.conta,
+      valor: newValue,
+    };
+    handleAction(() => api.adjustBet(betId, { updatedEntry }));
   };
 
   const renderPage = () => {
@@ -121,7 +97,7 @@ function App() {
         return (
           <Dashboard stats={stats} onSubmit={handleBetSubmit} bets={bets} />
         );
-      case "calendar":
+      case "apostas":
         return (
           <BetList
             bets={bets}
@@ -130,13 +106,13 @@ function App() {
             onUpdateBetEntry={handleUpdateBetEntry}
           />
         );
-      case "bankrolls":
+      case "bancas":
         return (
           <Bankrolls
             stats={stats}
-            onSubmitTransaction={handleTransactionSubmit}
             detailedBancas={detailedBancas}
             detailedBancasByPerson={detailedBancasByPerson}
+            onSubmitTransaction={handleTransactionSubmit}
           />
         );
       default:
@@ -164,16 +140,20 @@ function App() {
       )}
 
       <div className="sidebar">
+        {/* Título "Freebets" removido daqui */}
         <button onClick={() => setCurrentPage("dashboard")}>
           Dashboard (Gráfico)
         </button>
-        <button onClick={() => setCurrentPage("calendar")}>
+        <button onClick={() => setCurrentPage("apostas")}>
           Apostas Pendentes
         </button>
-        <button onClick={() => setCurrentPage("bankrolls")}>Bancas</button>
+        <button onClick={() => setCurrentPage("bancas")}>Bancas</button>
       </div>
 
-      <div className="content">{renderPage()}</div>
+      <div className="content">
+        {/* Cabeçalho com o título da página foi removido */}
+        <main>{renderPage()}</main>
+      </div>
     </div>
   );
 }
