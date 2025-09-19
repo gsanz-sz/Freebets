@@ -1,259 +1,157 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
-
+import BetForm from "./BetForm";
 import BetList from "./BetList";
 import Dashboard from "./Dashboard";
+import TransactionForm from "./TransactionForm";
 import Bankrolls from "./Bankrolls";
+import * as api from "./apiService"; // Nosso novo serviço de API!
 
 function App() {
-  const [currentPage, setCurrentPage] = useState("dashboard");
   const [bets, setBets] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    totalBankroll: 0,
+    profitByAccount: {},
+    bankrollByPlatform: {},
+  });
   const [detailedBancas, setDetailedBancas] = useState({});
   const [detailedBancasByPerson, setDetailedBancasByPerson] = useState({});
+  const [currentPage, setCurrentPage] = useState("dashboard");
 
-  const fetchBets = async () => {
+  // Função central para buscar todos os dados da API
+  const fetchAllData = async () => {
+    console.log("--- [App.js] Iniciando atualização de todos os dados ---");
     try {
-      const response = await fetch("http://localhost:3000/api/bets");
-      if (response.ok) {
-        const data = await response.json();
-        setBets(data);
-      } else {
-        console.error("Falha ao buscar apostas.");
-      }
-    } catch (error) {
-      console.error("Erro de conexão:", error);
-    }
-  };
+      const betsData = await api.getBets();
+      const statsData = await api.getStats();
+      const detailedBancasData = await api.getDetailedBancas();
+      const detailedBancasByPersonData = await api.getDetailedBancasByPerson();
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/api/stats");
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      } else {
-        console.error("Falha ao buscar estatísticas.");
-      }
-    } catch (error) {
-      console.error("Erro de conexão:", error);
-    }
-  };
-
-  const fetchDetailedBancas = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:3000/api/stats/detailed-bancas"
+      setBets(betsData);
+      setStats(statsData);
+      setDetailedBancas(detailedBancasData);
+      setDetailedBancasByPerson(detailedBancasByPersonData);
+      console.log(
+        "+++ [App.js] Todos os dados foram atualizados com sucesso! +++"
       );
-      if (response.ok) {
-        const data = await response.json();
-        setDetailedBancas(data);
-      } else {
-        console.error("Falha ao buscar bancas detalhadas.");
-      }
     } catch (error) {
-      console.error("Erro de conexão:", error);
-    }
-  };
-
-  const fetchDetailedBancasByPerson = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:3000/api/stats/detailed-bancas-by-person"
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setDetailedBancasByPerson(data);
-      } else {
-        console.error("Falha ao buscar bancas por pessoa.");
-      }
-    } catch (error) {
-      console.error("Erro de conexão:", error);
+      console.error("!!! [App.js] Falha ao buscar dados da API:", error);
     }
   };
 
   useEffect(() => {
-    fetchBets();
-    fetchStats();
-    fetchDetailedBancas();
-    fetchDetailedBancasByPerson();
+    fetchAllData();
   }, []);
 
-  const handleSubmit = async (formData) => {
+  const handleBetSubmit = async (newBet) => {
+    console.log("--- [App.js] Tentando submeter nova aposta ---");
     try {
-      const response = await fetch("http://localhost:3000/api/bets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        fetchBets();
-        fetchStats();
-        fetchDetailedBancas();
-        fetchDetailedBancasByPerson();
-        return true;
-      } else {
-        console.error("Falha ao salvar a aposta.");
-        return false;
-      }
-    } catch (error) {
-      console.error("Erro de conexão:", error);
-      return false;
-    }
-  };
-
-  const handleFinishBet = async (id, winningAccount, profit) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/bets/finish/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contaVencedora: winningAccount,
-            lucro: profit,
-          }),
-        }
+      await api.createBet(newBet);
+      console.log(
+        "+++ [App.js] Aposta criada com sucesso! Atualizando dados..."
       );
-
-      if (response.ok) {
-        fetchBets();
-        fetchStats();
-        fetchDetailedBancas();
-        fetchDetailedBancasByPerson();
-      } else {
-        console.error("Falha ao atualizar aposta.");
-      }
+      fetchAllData();
     } catch (error) {
-      console.error("Erro de conexão:", error);
+      console.error("!!! [App.js] Falha ao criar aposta:", error);
     }
   };
 
-  const handleTransactionSubmit = async (formData) => {
+  const handleTransactionSubmit = async (newTransaction) => {
+    console.log("--- [App.js] Tentando submeter nova transação ---");
     try {
-      const response = await fetch("http://localhost:3000/api/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        console.log("Transação salva com sucesso!");
-        fetchStats();
-        fetchDetailedBancas();
-        fetchDetailedBancasByPerson();
-      } else {
-        console.error("Falha ao salvar a transação.");
-      }
-    } catch (error) {
-      console.error("Erro de conexão:", error);
-    }
-  };
-
-  // A função que estava faltando
-  const handleDeleteBet = async (id) => {
-    if (window.confirm("Tem certeza que deseja excluir esta aposta?")) {
-      try {
-        const response = await fetch(`http://localhost:3000/api/bets/${id}`, {
-          method: "DELETE",
-        });
-
-        if (response.ok) {
-          fetchBets();
-          fetchStats();
-          fetchDetailedBancas();
-          fetchDetailedBancasByPerson();
-        } else {
-          console.error("Falha ao excluir a aposta.");
-        }
-      } catch (error) {
-        console.error("Erro de conexão:", error);
-      }
-    }
-  };
-
-  const handleUpdateBetEntry = async (betId, entryToUpdate, newValue) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/bets/adjust/${betId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            updatedEntry: {
-              responsavel: entryToUpdate.responsavel,
-              conta: entryToUpdate.conta,
-              valor: newValue,
-            },
-          }),
-        }
+      await api.createTransaction(newTransaction);
+      console.log(
+        "+++ [App.js] Transação criada com sucesso! Atualizando dados..."
       );
-
-      if (response.ok) {
-        await fetchBets();
-        await fetchStats();
-        await fetchDetailedBancas();
-        await fetchDetailedBancasByPerson();
-        return true; // Retorna true em caso de sucesso
-      } else {
-        console.error("Falha ao atualizar a aposta.");
-        return false; // Retorna false em caso de falha
-      }
+      fetchAllData();
     } catch (error) {
-      console.error("Erro de conexão:", error);
-      return false; // Retorna false em caso de erro
+      console.error("!!! [App.js] Falha ao criar transação:", error);
+    }
+  };
+
+  const handleDeleteBet = async (betId) => {
+    console.log(`--- [App.js] Tentando deletar aposta ID: ${betId} ---`);
+    try {
+      await api.deleteBet(betId);
+      console.log(
+        `+++ [App.js] Aposta ${betId} deletada com sucesso! Atualizando dados...`
+      );
+      fetchAllData();
+    } catch (error) {
+      console.error(`!!! [App.js] Falha ao deletar aposta ${betId}:`, error);
+    }
+  };
+
+  const handleFinishBet = async (betId, contaVencedora, lucro) => {
+    console.log(`--- [App.js] Tentando finalizar aposta ID: ${betId} ---`);
+    try {
+      await api.finishBet(betId, { contaVencedora, lucro });
+      console.log(
+        `+++ [App.js] Aposta ${betId} finalizada com sucesso! Atualizando dados...`
+      );
+      fetchAllData();
+    } catch (error) {
+      console.error(`!!! [App.js] Falha ao finalizar aposta ${betId}:`, error);
+    }
+  };
+
+  const handleUpdateBetEntry = async (betId, updatedEntry) => {
+    console.log(`--- [App.js] Tentando ajustar aposta ID: ${betId} ---`);
+    try {
+      await api.adjustBet(betId, { updatedEntry });
+      console.log(
+        `+++ [App.js] Aposta ${betId} ajustada com sucesso! Atualizando dados...`
+      );
+      fetchAllData();
+    } catch (error) {
+      console.error(`!!! [App.js] Falha ao ajustar aposta ${betId}:`, error);
     }
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard stats={stats} onSubmit={handleSubmit} />;
-      case "calendar":
+        return <Dashboard stats={stats} />;
+      case "bets":
         return (
-          <BetList
-            bets={bets}
-            onFinishBet={handleFinishBet}
-            onDeleteBet={handleDeleteBet}
-            onUpdateBetEntry={handleUpdateBetEntry}
-          />
+          <>
+            <BetForm onSubmit={handleBetSubmit} />
+            <BetList
+              bets={bets}
+              onDelete={handleDeleteBet}
+              onFinish={handleFinishBet}
+              onUpdateEntry={handleUpdateBetEntry}
+            />
+          </>
         );
+      case "transactions":
+        return <TransactionForm onSubmit={handleTransactionSubmit} />;
       case "bankrolls":
         return (
           <Bankrolls
-            stats={stats}
-            onSubmitTransaction={handleTransactionSubmit}
             detailedBancas={detailedBancas}
             detailedBancasByPerson={detailedBancasByPerson}
           />
         );
       default:
-        return <Dashboard stats={stats} onSubmit={handleSubmit} />;
+        return <Dashboard stats={stats} />;
     }
   };
 
   return (
-    <div className="container">
-      <div className="sidebar">
-        <button onClick={() => setCurrentPage("dashboard")}>
-          Dashboard (Gráfico)
-        </button>
-        <button onClick={() => setCurrentPage("calendar")}>
-          Apostas Pendentes
+    <div className="App">
+      <nav>
+        <button onClick={() => setCurrentPage("dashboard")}>Dashboard</button>
+        <button onClick={() => setCurrentPage("bets")}>Apostas</button>
+        <button onClick={() => setCurrentPage("transactions")}>
+          Transações
         </button>
         <button onClick={() => setCurrentPage("bankrolls")}>Bancas</button>
-      </div>
-
-      <div className="content">{renderPage()}</div>
+      </nav>
+      <header className="App-header">
+        <h1>Freebets</h1>
+      </header>
+      <main>{renderPage()}</main>
     </div>
   );
 }

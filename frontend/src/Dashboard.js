@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -10,8 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-
-import BetForm from "./BetForm";
+import * as api from "./apiService"; // Importando nosso serviço
 
 ChartJS.register(
   CategoryScale,
@@ -23,97 +22,50 @@ ChartJS.register(
   Legend
 );
 
-function Dashboard({ stats, onSubmit }) {
+const Dashboard = ({ stats }) => {
   const [history, setHistory] = useState([]);
-  const [chartData, setChartData] = useState({
-    labels: [],
-    datasets: [],
-  });
-  const [showForm, setShowForm] = useState(false);
-
-  const fetchHistory = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/api/stats/history");
-      if (response.ok) {
-        const data = await response.json();
-        setHistory(data);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar o histórico:", error);
-    }
-  };
 
   useEffect(() => {
+    const fetchHistory = async () => {
+      console.log("--- [Dashboard.js] Buscando histórico para o gráfico ---");
+      try {
+        const historyData = await api.getHistory();
+        setHistory(historyData);
+        console.log("+++ [Dashboard.js] Histórico carregado com sucesso! +++");
+      } catch (error) {
+        console.error("!!! [Dashboard.js] Falha ao buscar histórico:", error);
+      }
+    };
     fetchHistory();
   }, []);
 
-  useEffect(() => {
-    if (history.length > 0) {
-      const labels = history.map((item) => item.date);
-      const data = history.map((item) => parseFloat(item.bankroll));
-
-      setChartData({
-        labels: labels,
-        datasets: [
-          {
-            label: "Evolução da Banca",
-            data: data,
-            borderColor: "rgb(75, 192, 192)",
-            backgroundColor: "rgba(75, 192, 192, 0.5)",
-          },
-        ],
-      });
-    }
-  }, [history]);
-
-  if (!stats) {
-    return <div>Carregando estatísticas...</div>;
-  }
-
-  // Função para fechar o formulário (passada para o BetForm)
-  const closeForm = () => {
-    setShowForm(false);
+  const chartData = {
+    labels: history.map((h) => h.date),
+    datasets: [
+      {
+        label: "Bankroll Over Time",
+        data: history.map((h) => h.bankroll),
+        fill: false,
+        backgroundColor: "rgb(75, 192, 192)",
+        borderColor: "rgba(75, 192, 192, 0.2)",
+      },
+    ],
   };
 
   return (
     <div>
-      <div className="stats-container">
-        <h2>Banca Total: R$ {stats.totalBankroll}</h2>
-        <h3>Lucro por Conta:</h3>
-        <ul>
-          {Object.entries(stats.profitByAccount).map(([account, profit]) => (
-            <li key={account}>
-              {account}: R$ {profit.toFixed(2)}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <hr />
-
-      {/* O gráfico agora aparece primeiro */}
-      {history.length > 0 && (
-        <div style={{ width: "100%", maxWidth: "800px", margin: "auto" }}>
-          <h2>Evolução da Banca</h2>
+      <h2>Dashboard</h2>
+      <p>Banca Total: ${stats.totalBankroll}</p>
+      {/* O resto do seu componente JSX continua o mesmo */}
+      <div className="chart-container">
+        {history.length > 0 ? (
           <Line data={chartData} />
-        </div>
-      )}
-
-      {/* E o botão para abrir o formulário fica abaixo do gráfico */}
-      <button onClick={() => setShowForm(true)} style={{ marginTop: "20px" }}>
-        Adicionar nova aposta
-      </button>
-
-      {/* O formulário aparece como um pop-up condicionalmente */}
-      {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <BetForm onSubmit={onSubmit} onClose={closeForm} />
-          </div>
-        </div>
-      )}
+        ) : (
+          <p>Carregando histórico do gráfico...</p>
+        )}
+      </div>
     </div>
   );
-}
+};
 
 export default Dashboard;
