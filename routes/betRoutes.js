@@ -354,4 +354,33 @@ router.get(
   })
 );
 
+// --- NOVA ROTA PARA LUCRO DO DIA ---
+router.get(
+  "/stats/daily-profit",
+  asyncHandler(async (req, res) => {
+    // Pega o início e o fim do dia de hoje
+    const hoje = new Date();
+    const inicioDoDia = new Date(hoje.setHours(0, 0, 0, 0));
+    const fimDoDia = new Date(hoje.setHours(23, 59, 59, 999));
+
+    // Busca as apostas finalizadas no intervalo de hoje
+    const apostasDeHoje = await Bet.find({
+      finished: true,
+      updatedAt: {
+        // Usamos updatedAt pois é quando a aposta é finalizada
+        $gte: inicioDoDia,
+        $lte: fimDoDia,
+      },
+    });
+
+    // Soma o lucro de todas as apostas encontradas
+    const lucroDoDia = apostasDeHoje.reduce(
+      (total, aposta) => total + aposta.lucro,
+      0
+    );
+
+    res.status(200).json({ dailyProfit: lucroDoDia });
+  })
+);
+
 module.exports = router;

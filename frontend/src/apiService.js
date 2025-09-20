@@ -106,3 +106,9 @@ export const getHistory = async () => {
   const response = await fetch(`${API_BASE_URL}/stats/history`);
   return handleResponse(response);
 };
+
+export const getDailyProfit = async () => {
+  console.log(">>> [API Service] Buscando lucro do dia...");
+  const response = await fetch(`${API_BASE_URL}/stats/daily-profit`);
+  return handleResponse(response);
+};

@@ -21,41 +21,44 @@ const entrySchema = new mongoose.Schema({
 });
 
 // Define o Schema da Aposta principal
-const betSchema = new mongoose.Schema({
-  nomeAposta: {
-    type: String,
-    required: true,
-  },
-  data: {
-    type: Date,
-    default: Date.now,
-  },
-  // O novo campo que irá armazenar todas as entradas
-  entradas: {
-    type: [entrySchema],
-    required: true,
-  },
-  finished: {
-    type: Boolean,
-    default: false,
-  },
-  contaVencedora: {
-    type: String,
-    required: function () {
-      return this.finished === true;
+const betSchema = new mongoose.Schema(
+  {
+    nomeAposta: {
+      type: String,
+      required: true,
+    },
+    data: {
+      type: Date,
+      default: Date.now,
+    },
+    // O novo campo que irá armazenar todas as entradas
+    entradas: {
+      type: [entrySchema],
+      required: true,
+    },
+    finished: {
+      type: Boolean,
+      default: false,
+    },
+    contaVencedora: {
+      type: String,
+      required: function () {
+        return this.finished === true;
+      },
+    },
+    lucro: {
+      type: Number,
+      required: function () {
+        return this.finished === true;
+      },
+    },
+    plataformaPrincipal: {
+      type: String,
+      required: true,
     },
   },
-  lucro: {
-    type: Number,
-    required: function () {
-      return this.finished === true;
-    },
-  },
-  plataformaPrincipal: {
-    type: String,
-    required: true,
-  },
-});
+  { timestamps: true }
+);
 
 // Cria o Model
 const Bet = mongoose.model("Bet", betSchema);

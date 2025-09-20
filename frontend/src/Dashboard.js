@@ -39,37 +39,44 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
   const [history, setHistory] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+  const [dailyProfit, setDailyProfit] = useState(0); // <-- 1. ADICIONADO O NOVO ESTADO
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    // A função agora busca o histórico E o lucro diário
+    const fetchDashboardData = async () => {
       try {
-        const historyData = await api.getHistory();
+        const [historyData, dailyProfitData] = await Promise.all([
+          api.getHistory(),
+          api.getDailyProfit(), // <-- 2. CHAMA A NOVA FUNÇÃO DA API
+        ]);
         setHistory(historyData);
+        setDailyProfit(dailyProfitData.dailyProfit); // <-- 3. ATUALIZA O ESTADO
       } catch (error) {
-        console.error("!!! [Dashboard.js] Falha ao buscar histórico:", error);
+        console.error(
+          "!!! [Dashboard.js] Falha ao buscar dados do dashboard:",
+          error
+        );
       }
     };
-    fetchHistory();
+    fetchDashboardData();
   }, []);
 
-  // Efeito para construir os dados do gráfico quando o histórico muda
+  // Efeito para construir os dados do gráfico (sem alterações)
   useEffect(() => {
     if (history.length > 0) {
       const labels = history.map((h) => h.date);
       const datasets = [];
 
-      // Adiciona a linha da Banca Total
       datasets.push({
         label: "Banca Total",
         data: history.map((h) => parseFloat(h.totalBankroll).toFixed(2)),
-        borderColor: "rgba(44, 62, 80, 1)", // Cor mais escura para destaque
+        borderColor: "rgba(44, 62, 80, 1)",
         backgroundColor: "rgba(44, 62, 80, 0.1)",
         fill: true,
         tension: 0.1,
-        yAxisID: "y-bankroll", // Associa a um eixo Y
+        yAxisID: "y-bankroll",
       });
 
-      // Adiciona uma linha para cada responsável
       const responsaveis = Object.keys(history[0] || {}).filter(
         (key) => key !== "date" && key !== "totalBankroll"
       );
@@ -83,7 +90,7 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
           backgroundColor: color.replace("1)", "0.1)"),
           fill: false,
           tension: 0.1,
-          yAxisID: "y-profit", // Associa a outro eixo Y
+          yAxisID: "y-profit",
         });
       });
 
@@ -103,7 +110,6 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
     setIsModalOpen(false);
   };
 
-  // Opções do Gráfico para adicionar um segundo eixo Y
   const chartOptions = {
     responsive: true,
     interaction: {
@@ -113,7 +119,7 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
     scales: {
       y: {
         type: "linear",
-        display: false, // Oculta o eixo principal para evitar confusão visual
+        display: false,
         position: "left",
       },
       "y-bankroll": {
@@ -134,7 +140,7 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
           text: "Lucro Individual (R$)",
         },
         grid: {
-          drawOnChartArea: false, // Não desenha a grelha para o eixo de lucro
+          drawOnChartArea: false,
         },
       },
     },
@@ -162,6 +168,19 @@ const Dashboard = ({ stats, onSubmit, bets }) => {
             R$ {parseFloat(stats.totalBankroll).toFixed(2)}
           </p>
         </div>
+
+        {/* --- 4. NOVO CARD ADICIONADO AQUI --- */}
+        <div className="stat-card">
+          <h3>Lucro do Dia</h3>
+          <p
+            className={
+              dailyProfit >= 0 ? "stat-value-positive" : "stat-value-negative"
+            }
+          >
+            R$ {dailyProfit.toFixed(2)}
+          </p>
+        </div>
+
         <div className="stat-card">
           <h3>Lucro Total</h3>
           <p
