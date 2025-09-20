@@ -1,19 +1,61 @@
 ﻿# Freebets
 
-- Crie um servidor no Atlas MONGODB
-- Pegue a sua Key e isira em um arquivo .env na pasta raiz /Freebets
+Aplicação para gerenciamento de freebets, com **Node.js**, **MongoDB Atlas** e **React** no frontend.
 
-# Exemplo de .env
+---
+
+## 🚀 Pré-requisitos
+
+Antes de começar, você precisa ter instalado na sua máquina:
+
+- [Node.js](https://nodejs.org/) (v16 ou superior recomendado)  
+- [npm](https://www.npmjs.com/)  
+- [MongoDB Atlas](https://www.mongodb.com/atlas) (para criar seu cluster e obter a connection string)  
+
+---
+
+## ⚙️ Configuração do MongoDB
+
+1. Crie um servidor no **MongoDB Atlas**.  
+2. Copie sua **connection string**.  
+3. Crie um arquivo `.env` na pasta raiz `/Freebets`.  
+
+### Exemplo de `.env`
+```env
 PORT=3000
-MONGO_URI="mongodb+srv://<user>:<password>@<database>.zgzqjvm.mongodb.net/?retryWrites=true&w=majority&appName=<AppName>"
+MONGO_URI="mongodb+srv://user:password@database.zgzqjvm.mongodb.net/?retryWrites=true&w=majority&appName=AppName"
+```
 
-- Antes de startarmos o aplicativo dê:
-"npm install" em /freebets e /freebets/frontend
+## 📦 Instalação
 
-- Para startar o servidor dê:
+Clone este repositório e instale as dependências.
 
-"npm start" em /freebets/frontend
-"node server.js" em /freebets
+## Backend
+```
+cd freebets
+npm install
+```
 
-## AJUSTE A SER FEITO!
-## Os responsáveis das contas, estão no hardcode, ainda vou implementar em softcode
+## Frontend
+```
+cd freebets/frontend
+npm install
+```
+
+## ▶️ Executando o Projeto
+## Backend
+```
+cd freebets
+node server.js
+```
+
+## Frontend
+```
+cd freebets/frontend
+npm start
+```
+
+## 🔧 Ajustes a Fazer
+
+Os responsáveis das contas estão configurados em hardcode.
+Em versões futuras será implementado suporte em softcode.
