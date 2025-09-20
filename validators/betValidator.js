@@ -15,6 +15,8 @@ const betSchema = Joi.object({
     .min(1)
     .required(),
   finished: Joi.boolean().optional(),
+
+  plataformaPrincipal: Joi.string().trim().required(),
 });
 
 // --- NOVO ESQUEMA PARA FINALIZAR UMA APOSTA ---

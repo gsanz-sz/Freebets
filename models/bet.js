@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Define um esquema para cada entrada de aposta
 const entrySchema = new mongoose.Schema({
@@ -17,7 +17,7 @@ const entrySchema = new mongoose.Schema({
   odd: {
     type: Number,
     required: true,
-  }
+  },
 });
 
 // Define o Schema da Aposta principal
@@ -41,19 +41,23 @@ const betSchema = new mongoose.Schema({
   },
   contaVencedora: {
     type: String,
-    required: function() {
+    required: function () {
       return this.finished === true;
     },
   },
   lucro: {
     type: Number,
-    required: function() {
+    required: function () {
       return this.finished === true;
     },
+  },
+  plataformaPrincipal: {
+    type: String,
+    required: true,
   },
 });
 
 // Cria o Model
-const Bet = mongoose.model('Bet', betSchema);
+const Bet = mongoose.model("Bet", betSchema);
 
 module.exports = Bet;

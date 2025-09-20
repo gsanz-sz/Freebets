@@ -4,6 +4,7 @@ import "./App.css";
 import BetList from "./BetList";
 import Dashboard from "./Dashboard";
 import Bankrolls from "./Bankrolls";
+import Performance from "./Performance"; // <-- JÁ ESTAVA AQUI, SÓ CONFIRMANDO
 import * as api from "./apiService";
 
 function App() {
@@ -115,6 +116,9 @@ function App() {
             onSubmitTransaction={handleTransactionSubmit}
           />
         );
+      // <-- ALTERAÇÃO AQUI: Adicionando o 'case' para a nova página
+      case "performance":
+        return <Performance />;
       default:
         return (
           <Dashboard stats={stats} onSubmit={handleBetSubmit} bets={bets} />
@@ -140,18 +144,35 @@ function App() {
       )}
 
       <div className="sidebar">
-        {/* Título "Freebets" removido daqui */}
-        <button onClick={() => setCurrentPage("dashboard")}>
+        {/* Adicionei a classe 'active' para melhor feedback visual */}
+        <button
+          onClick={() => setCurrentPage("dashboard")}
+          className={currentPage === "dashboard" ? "active" : ""}
+        >
           Dashboard (Gráfico)
         </button>
-        <button onClick={() => setCurrentPage("apostas")}>
+        <button
+          onClick={() => setCurrentPage("apostas")}
+          className={currentPage === "apostas" ? "active" : ""}
+        >
           Apostas Pendentes
         </button>
-        <button onClick={() => setCurrentPage("bancas")}>Bancas</button>
+        <button
+          onClick={() => setCurrentPage("bancas")}
+          className={currentPage === "bancas" ? "active" : ""}
+        >
+          Bancas
+        </button>
+        {/* <-- ALTERAÇÃO AQUI: Adicionando o novo botão */}
+        <button
+          onClick={() => setCurrentPage("performance")}
+          className={currentPage === "performance" ? "active" : ""}
+        >
+          Desempenho
+        </button>
       </div>
 
       <div className="content">
-        {/* Cabeçalho com o título da página foi removido */}
         <main>{renderPage()}</main>
       </div>
     </div>

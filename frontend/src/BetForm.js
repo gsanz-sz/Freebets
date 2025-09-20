@@ -1,5 +1,5 @@
 import React from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 
 function BetForm({ onSubmit, onClose }) {
   const {
@@ -11,6 +11,7 @@ function BetForm({ onSubmit, onClose }) {
     defaultValues: {
       nomeAposta: "",
       entradas: [{ responsavel: "", conta: "", valor: "", odd: "" }],
+      plataformaPrincipal: "", // Campo para guardar a plataforma principal
     },
   });
 
@@ -19,6 +20,13 @@ function BetForm({ onSubmit, onClose }) {
     name: "entradas",
   });
 
+  // "Assiste" as mudanças nas entradas para atualizar as opções de rádio dinamicamente
+  const entradas = useWatch({
+    control,
+    name: "entradas",
+  });
+
+  // Suas listas de contas e responsáveis
   const accounts = [
     "Betano",
     "Betfair",
@@ -48,6 +56,7 @@ function BetForm({ onSubmit, onClose }) {
   ];
   const responsaveis = ["Gabriel", "Giovanna", "Leleco"];
 
+  // Formata os dados antes de enviar para a API
   const onFormSubmit = (data) => {
     const formattedData = {
       ...data,
@@ -70,6 +79,7 @@ function BetForm({ onSubmit, onClose }) {
           </button>
           <h2>Adicionar Nova Aposta</h2>
 
+          {/* Campo Nome da Aposta */}
           <div className="form-group">
             <label>Nome da Aposta</label>
             <input
@@ -85,6 +95,7 @@ function BetForm({ onSubmit, onClose }) {
 
           <hr className="form-divider" />
 
+          {/* Mapeamento das Entradas */}
           {fields.map((item, index) => (
             <div key={item.id} className="entry-container">
               <div className="entry-header">
@@ -99,7 +110,6 @@ function BetForm({ onSubmit, onClose }) {
                   </button>
                 )}
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Responsável</label>
@@ -144,7 +154,6 @@ function BetForm({ onSubmit, onClose }) {
                   )}
                 </div>
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Valor (R$)</label>
@@ -172,7 +181,7 @@ function BetForm({ onSubmit, onClose }) {
                   <input
                     className="form-input"
                     type="number"
-                    step="0.01"
+                    step="0.001"
                     {...register(`entradas.${index}.odd`, {
                       required: "A odd é obrigatória.",
                       valueAsNumber: true,
@@ -192,6 +201,39 @@ function BetForm({ onSubmit, onClose }) {
             </div>
           ))}
 
+          {/* --- NOVA SEÇÃO DE SELEÇÃO DA PLATAFORMA PRINCIPAL --- */}
+          {entradas && entradas.length > 1 && (
+            <div className="form-group principal-platform-selector">
+              <hr className="form-divider" />
+              <label>Qual plataforma gerou a oportunidade?</label>
+              <div className="radio-group">
+                {entradas.map((entrada, index) =>
+                  entrada.conta ? (
+                    <div key={index} className="radio-option">
+                      <input
+                        type="radio"
+                        id={`plataforma-${index}`}
+                        {...register("plataformaPrincipal", {
+                          required: "Selecione a plataforma principal.",
+                        })}
+                        value={entrada.conta}
+                      />
+                      <label htmlFor={`plataforma-${index}`}>
+                        {entrada.conta}
+                      </label>
+                    </div>
+                  ) : null
+                )}
+              </div>
+              {errors.plataformaPrincipal && (
+                <p className="error-message">
+                  {errors.plataformaPrincipal.message}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Botões do Formulário */}
           <div className="form-button-group">
             <button
               type="button"

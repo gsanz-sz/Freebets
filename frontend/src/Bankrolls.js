@@ -1,16 +1,33 @@
 import { useState } from "react";
 import TransactionForm from "./TransactionForm";
+import React from "react"; // Adicionado para evitar erros de lint
 
-function Bankrolls({
-  stats,
-  onSubmitTransaction,
-  detailedBancas,
-  detailedBancasByPerson,
-}) {
+// Componente para exibir o valor com cor dinâmica
+const ValorDisplay = ({ valor }) => {
+  const cor = valor > 0 ? "valor-positivo" : valor < 0 ? "valor-negativo" : "";
+  return <span className={`valor ${cor}`}>R$ {valor.toFixed(2)}</span>;
+};
+
+// Componente para um card de casa de aposta individual
+const CardBanca = ({ nomeCasa, banca, emAposta }) => (
+  <div className="card-banca">
+    <h4>{nomeCasa}</h4>
+    <div className="info-banca">
+      <span>Saldo:</span>
+      <ValorDisplay valor={banca} />
+    </div>
+    <div className="info-banca">
+      <span>Em Aposta:</span>
+      <span className="valor">R$ {emAposta.toFixed(2)}</span>
+    </div>
+  </div>
+);
+
+function Bankrolls({ onSubmitTransaction, detailedBancasByPerson }) {
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [transactionType, setTransactionType] = useState("deposito");
 
-  if (!stats || !detailedBancas || !detailedBancasByPerson) {
+  if (!detailedBancasByPerson) {
     return <div>Carregando estatísticas...</div>;
   }
 
@@ -24,56 +41,63 @@ function Bankrolls({
     setShowTransactionForm(true);
   };
 
+  const calcularTotalPorResponsavel = (plataformas) => {
+    return Object.values(plataformas).reduce(
+      (acc, { banca, emAposta }) => {
+        acc.totalBanca += banca;
+        acc.totalEmAposta += emAposta;
+        return acc;
+      },
+      { totalBanca: 0, totalEmAposta: 0 }
+    );
+  };
+
   return (
     <div className="bankrolls-container">
       <div className="bankrolls-header">
         <h1>Minhas Bancas</h1>
         <div className="header-buttons">
-          <button onClick={() => openForm("deposito")}>
+          <button
+            className="btn btn-deposito"
+            onClick={() => openForm("deposito")}
+          >
             Adicionar Depósito
           </button>
-          <button
-            onClick={() => openForm("saque")}
-            style={{ marginLeft: "10px" }}
-          >
+          <button className="btn btn-saque" onClick={() => openForm("saque")}>
             Adicionar Saque
           </button>
         </div>
       </div>
 
-      <hr />
-
-      {/* Nova seção para exibir o saldo detalhado das bancas por pessoa */}
-      <h3>Saldo por Responsável:</h3>
-      <ul>
-        {Object.entries(detailedBancasByPerson).map(([person, platforms]) => (
-          <li key={person}>
-            <strong>{person}:</strong>
-            <ul>
-              {Object.entries(platforms).map(([platform, data]) => (
-                <li key={platform} style={{ marginLeft: "20px" }}>
-                  {platform}
-                  <ul>
-                    <li>Banca: R$ {data.banca.toFixed(2)}</li>
-                    <li>Em Aposta: R$ {data.emAposta.toFixed(2)}</li>
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
-
-      <hr />
-
-      <h3>Lucro por Conta:</h3>
-      <ul>
-        {Object.entries(stats.profitByAccount).map(([account, profit]) => (
-          <li key={account}>
-            {account}: R$ {profit.toFixed(2)}
-          </li>
-        ))}
-      </ul>
+      <div className="responsaveis-grid">
+        {Object.entries(detailedBancasByPerson).map(
+          ([responsavel, plataformas]) => {
+            const { totalBanca, totalEmAposta } =
+              calcularTotalPorResponsavel(plataformas);
+            return (
+              <div className="card-responsavel" key={responsavel}>
+                <div className="responsavel-header">
+                  <h3>{responsavel}</h3>
+                  <div className="responsavel-total">
+                    <span>Total: </span>
+                    <ValorDisplay valor={totalBanca + totalEmAposta} />
+                  </div>
+                </div>
+                <div className="bancas-grid">
+                  {Object.entries(plataformas).map(([nomeCasa, dados]) => (
+                    <CardBanca
+                      key={nomeCasa}
+                      nomeCasa={nomeCasa}
+                      banca={dados.banca}
+                      emAposta={dados.emAposta}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          }
+        )}
+      </div>
 
       {showTransactionForm && (
         <div className="modal-overlay">

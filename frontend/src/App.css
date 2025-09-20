@@ -436,3 +436,235 @@ body {
   text-align: center;
   padding: 20px;
 }
+
+/* --- ESTILOS PARA A PÁGINA DE BANCAS --- */
+
+.bankrolls-container h1 {
+  color: #2c3e50;
+}
+
+.bankrolls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.header-buttons .btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn.btn-deposito {
+  background-color: #27ae60; /* Verde */
+}
+
+.btn.btn-deposito:hover {
+  background-color: #229954;
+  transform: translateY(-2px);
+}
+
+.btn.btn-saque {
+  background-color: #e74c3c; /* Vermelho */
+  margin-left: 10px;
+}
+
+.btn.btn-saque:hover {
+  background-color: #c0392b;
+  transform: translateY(-2px);
+}
+
+/* Grid para os responsáveis */
+.responsaveis-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.card-responsavel {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.responsavel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.responsavel-header h3 {
+  margin: 0;
+  font-size: 22px;
+  color: #2c3e50;
+}
+
+.responsavel-total {
+  font-size: 18px;
+  font-weight: 500;
+  color: #34495e;
+}
+
+.responsavel-total .valor {
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+/* Grid para as bancas de cada responsável */
+.bancas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card-banca {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.card-banca h4 {
+  margin: 0 0 15px 0;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.info-banca {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.info-banca .valor {
+  font-weight: 600;
+  color: #374151;
+}
+
+.valor.valor-positivo {
+  color: #10b981; /* Verde Tailwind 500 */
+}
+
+.valor.valor-negativo {
+  color: #ef4444; /* Vermelho Tailwind 500 */
+}
+
+/* --- ESTILOS PARA O BOTÃO ATIVO NA SIDEBAR --- */
+.sidebar nav button.active {
+  background-color: #3498db;
+  color: white;
+  border-right: 4px solid #2980b9;
+}
+
+/* --- ESTILOS PARA A PÁGINA DE DESEMPENHO --- */
+.performance-container h1 {
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.card-performance {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-performance h3 {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  text-align: center;
+  color: #2c3e50;
+}
+
+.info-performance {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1em;
+}
+
+.info-performance .valor {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.info-performance-secondary {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.info-performance-secondary .valor {
+  font-weight: 600;
+}
+
+/* Re-utilizando as classes de cor que já criamos */
+.valor.valor-positivo {
+  color: #10b981;
+}
+
+.valor.valor-negativo {
+  color: #ef4444;
+}
+
+/* --- ESTILOS PARA SELEÇÃO DE PLATAFORMA PRINCIPAL --- */
+.principal-platform-selector {
+  margin-top: 20px;
+}
+
+.principal-platform-selector > label {
+  /* Usando '>' para evitar conflito com label do radio */
+  font-weight: bold;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+}
+
+.radio-option input[type="radio"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.radio-option label {
+  font-weight: normal;
+  cursor: pointer;
+  margin-bottom: 0;
+}
