@@ -82,10 +82,15 @@ router.put(
 
     const { updatedEntry } = value;
     const bet = res.locals.bet;
+
+    // Lógica de busca corrigida para ser mais específica e evitar erros.
+    // O frontend deve enviar a 'odd' original para identificar a entrada correta.
     const entryIndex = bet.entradas.findIndex(
       (entry) =>
         entry.responsavel === updatedEntry.responsavel &&
-        entry.conta === updatedEntry.conta
+        entry.conta === updatedEntry.conta &&
+        // Usar a odd original é crucial para identificar a entrada correta
+        entry.odd.toString() === updatedEntry.originalOdd.toString()
     );
 
     if (entryIndex === -1) {
@@ -93,7 +98,11 @@ router.put(
       throw new Error("Entrada da aposta não encontrada para ajuste.");
     }
 
+    // --- ALTERAÇÃO PRINCIPAL AQUI ---
+    // Atualiza tanto o valor quanto a nova odd
     bet.entradas[entryIndex].valor = parseFloat(updatedEntry.valor);
+    bet.entradas[entryIndex].odd = parseFloat(updatedEntry.odd); // Adiciona a atualização da odd
+
     const updatedBet = await bet.save();
     console.log(`+++ Aposta com ID ${req.params.id} foi ajustada com sucesso.`);
     res.status(200).json(updatedBet);

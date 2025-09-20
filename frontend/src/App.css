@@ -47,19 +47,16 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+.sidebar button.active {
+  background-color: #3498db;
+  color: white;
+  border-right: 4px solid #2980b9;
+}
+
 .content {
   margin-left: 290px;
   padding: 20px;
   width: calc(100% - 290px);
-}
-
-.App-header {
-  margin-bottom: 20px;
-}
-
-.App-header h1 {
-  color: #2c3e50;
-  font-size: 32px;
 }
 
 /* --- ESTILOS PARA LOADING E ERROR --- */
@@ -564,7 +561,7 @@ body {
 }
 
 /* --- ESTILOS PARA O BOTÃO ATIVO NA SIDEBAR --- */
-.sidebar nav button.active {
+.sidebar button.active {
   background-color: #3498db;
   color: white;
   border-right: 4px solid #2980b9;
@@ -625,22 +622,12 @@ body {
   font-weight: 600;
 }
 
-/* Re-utilizando as classes de cor que já criamos */
-.valor.valor-positivo {
-  color: #10b981;
-}
-
-.valor.valor-negativo {
-  color: #ef4444;
-}
-
 /* --- ESTILOS PARA SELEÇÃO DE PLATAFORMA PRINCIPAL --- */
 .principal-platform-selector {
   margin-top: 20px;
 }
 
 .principal-platform-selector > label {
-  /* Usando '>' para evitar conflito com label do radio */
   font-weight: bold;
   margin-bottom: 10px;
   display: block;
@@ -667,4 +654,257 @@ body {
   font-weight: normal;
   cursor: pointer;
   margin-bottom: 0;
+}
+
+/* ========================================================================== */
+/* --- ESTILOS PARA O NOVO FULLCALENDAR --- */
+/* ========================================================================== */
+
+/* --- Container e Aparência Geral --- */
+.calendario-container {
+  /* Removemos as regras de altura fixa para que o calendário cresça */
+  position: relative;
+}
+
+/* Deixa a borda do evento transparente para nosso card customizado brilhar */
+.fc-event {
+  border: none !important;
+  padding: 2px !important;
+  background-color: transparent !important;
+}
+
+/* --- Estilo dos Cards de Aposta (Eventos) --- */
+.evento-aposta {
+  padding: 5px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  overflow: hidden;
+}
+
+.evento-aposta:hover {
+  transform: scale(1.03);
+  z-index: 10;
+  position: relative;
+}
+
+.evento-aposta strong {
+  font-size: 13px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.evento-aposta p {
+  font-size: 12px;
+  margin: 2px 0 0 0;
+  opacity: 0.9;
+}
+
+/* Card para apostas pendentes */
+.evento-aposta.pendente {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+}
+.evento-aposta.pendente p {
+  color: #bdc3c7;
+}
+
+/* Card para apostas finalizadas */
+.evento-aposta.finalizada {
+  background-color: #f0f0f0;
+  border-left: 4px solid #27ae60;
+  color: #333;
+}
+.evento-aposta.finalizada p {
+  color: #555;
+}
+
+/* Cores para Lucro/Prejuízo */
+.lucro-positivo {
+  color: #27ae60;
+  font-weight: bold;
+}
+.lucro-negativo {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* --- Estilos do Modal de Detalhes (pode manter o que já tinha) --- */
+.bet-details-modal h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+.bet-details-modal ul {
+  list-style: none;
+  padding-left: 0;
+}
+.bet-details-modal li {
+  background-color: #f9f9f9;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+.modal-actions button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.btn-finalizar {
+  background-color: #27ae60;
+}
+.btn-excluir {
+  background-color: #c0392b;
+}
+.btn-confirmar {
+  background-color: #2980b9;
+}
+.btn-cancelar {
+  background-color: #7f8c8d;
+}
+.finish-section {
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+.finish-section h4 {
+  margin-top: 0;
+}
+.finish-section li {
+  background-color: transparent;
+  padding: 5px 0;
+}
+.finish-section label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.finish-section input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+/* --- MELHORIAS PARA O MODAL DE DETALHES DA APOSTA --- */
+
+.bet-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.bet-info-grid > div {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #e9ecef;
+}
+
+.bet-info-grid span {
+  font-size: 12px;
+  color: #6c757d;
+  text-transform: uppercase;
+  display: block;
+}
+
+.bet-info-grid p {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 5px 0 0 0;
+}
+
+.status-concluida {
+  color: #27ae60;
+}
+
+.status-pendente {
+  color: #f39c12;
+}
+
+ul.entry-list,
+ul.winner-selection-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.winner-selection-list li {
+  background-color: transparent;
+  padding: 5px 0;
+}
+
+p.profit-calculation {
+  text-align: right;
+  font-size: 1.1em;
+}
+
+/* --- ESTILOS PARA AJUSTE DE APOSTA DENTRO DO MODAL --- */
+
+.entry-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.view-entry-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.btn-adjust {
+  margin-left: 10px;
+  padding: 4px 8px;
+  font-size: 12px;
+  background-color: #f39c12; /* Laranja */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.edit-entry-form {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.edit-entry-input {
+  width: 80px;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.btn-save-edit,
+.btn-cancel-edit {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+}
+
+.btn-save-edit {
+  background-color: #27ae60; /* Verde */
+}
+
+.btn-cancel-edit {
+  background-color: #7f8c8d; /* Cinza */
 }

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
-import BetList from "./BetList";
+//import BetList from "./BetList";
 import Dashboard from "./Dashboard";
 import Bankrolls from "./Bankrolls";
-import Performance from "./Performance"; // <-- JÁ ESTAVA AQUI, SÓ CONFIRMANDO
+import Performance from "./Performance";
 import * as api from "./apiService";
+import BetsCalendar from "./BetsCalendar";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -55,13 +56,15 @@ function App() {
   }, []);
 
   const handleAction = async (action) => {
-    setLoading(true);
+    // setLoading(true); // Opcional: remover o piscar da tela em cada ação
     setError(null);
     try {
       await action();
-      await fetchAllData();
+      await fetchAllData(); // Recarrega os dados após a ação
     } catch (err) {
       setError(`${err.message}. Por favor, tente novamente.`);
+    } finally {
+      // setLoading(false);
     }
   };
 
@@ -74,20 +77,22 @@ function App() {
   };
 
   const handleDeleteBet = (betId) => {
-    if (window.confirm("Tem certeza que deseja excluir esta aposta?")) {
-      handleAction(() => api.deleteBet(betId));
-    }
+    // A confirmação já está no modal, então podemos remover daqui
+    handleAction(() => api.deleteBet(betId));
   };
 
   const handleFinishBet = (betId, contaVencedora, lucro) => {
     handleAction(() => api.finishBet(betId, { contaVencedora, lucro }));
   };
 
-  const handleUpdateBetEntry = (betId, entryToUpdate, newValue) => {
+  // --- FUNÇÃO DE AJUSTE ATUALIZADA ---
+  const handleUpdateBetEntry = (betId, entryToUpdate, newValues) => {
     const updatedEntry = {
       responsavel: entryToUpdate.responsavel,
       conta: entryToUpdate.conta,
-      valor: newValue,
+      originalOdd: entryToUpdate.odd, // Envia a odd original para identificação no backend
+      valor: newValues.valor, // Envia o novo valor
+      odd: newValues.odd, // Envia a nova odd
     };
     handleAction(() => api.adjustBet(betId, { updatedEntry }));
   };
@@ -100,7 +105,7 @@ function App() {
         );
       case "apostas":
         return (
-          <BetList
+          <BetsCalendar
             bets={bets}
             onFinishBet={handleFinishBet}
             onDeleteBet={handleDeleteBet}
@@ -116,7 +121,6 @@ function App() {
             onSubmitTransaction={handleTransactionSubmit}
           />
         );
-      // <-- ALTERAÇÃO AQUI: Adicionando o 'case' para a nova página
       case "performance":
         return <Performance />;
       default:
@@ -144,7 +148,6 @@ function App() {
       )}
 
       <div className="sidebar">
-        {/* Adicionei a classe 'active' para melhor feedback visual */}
         <button
           onClick={() => setCurrentPage("dashboard")}
           className={currentPage === "dashboard" ? "active" : ""}
@@ -163,7 +166,6 @@ function App() {
         >
           Bancas
         </button>
-        {/* <-- ALTERAÇÃO AQUI: Adicionando o novo botão */}
         <button
           onClick={() => setCurrentPage("performance")}
           className={currentPage === "performance" ? "active" : ""}
