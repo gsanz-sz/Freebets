@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react"; // 1. Adicionado 'useCallback'
 import "./App.css";
 
 //import BetList from "./BetList";
@@ -22,7 +22,8 @@ function App() {
   const [detailedBancas, setDetailedBancas] = useState({});
   const [detailedBancasByPerson, setDetailedBancasByPerson] = useState({});
 
-  const fetchAllData = async () => {
+  // 2. Função "memorizada" com useCallback para estabilidade
+  const fetchAllData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -49,11 +50,11 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Array de dependências vazio
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [fetchAllData]); // 3. Adicionada a dependência aqui
 
   const handleAction = async (action) => {
     // setLoading(true); // Opcional: remover o piscar da tela em cada ação
@@ -77,22 +78,22 @@ function App() {
   };
 
   const handleDeleteBet = (betId) => {
-    // A confirmação já está no modal, então podemos remover daqui
-    handleAction(() => api.deleteBet(betId));
+    if (window.confirm("Tem certeza que deseja excluir esta aposta?")) {
+      handleAction(() => api.deleteBet(betId));
+    }
   };
 
   const handleFinishBet = (betId, contaVencedora, lucro) => {
     handleAction(() => api.finishBet(betId, { contaVencedora, lucro }));
   };
 
-  // --- FUNÇÃO DE AJUSTE ATUALIZADA ---
   const handleUpdateBetEntry = (betId, entryToUpdate, newValues) => {
     const updatedEntry = {
       responsavel: entryToUpdate.responsavel,
       conta: entryToUpdate.conta,
-      originalOdd: entryToUpdate.odd, // Envia a odd original para identificação no backend
-      valor: newValues.valor, // Envia o novo valor
-      odd: newValues.odd, // Envia a nova odd
+      originalOdd: entryToUpdate.odd,
+      valor: newValues.valor,
+      odd: newValues.odd,
     };
     handleAction(() => api.adjustBet(betId, { updatedEntry }));
   };

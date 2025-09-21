@@ -28,8 +28,8 @@ const betSchema = new mongoose.Schema(
       required: true,
     },
     data: {
-      type: Date,
-      default: Date.now,
+      type: String,
+      required: true,
     },
     // O novo campo que irá armazenar todas as entradas
     entradas: {

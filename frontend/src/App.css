@@ -908,3 +908,19 @@ p.profit-calculation {
 .btn-cancel-edit {
   background-color: #7f8c8d; /* Cinza */
 }
+
+/* --- ESTILOS PARA HORA NO CARD DO CALENDÁRIO --- */
+
+.evento-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.evento-hora {
+  font-size: 11px;
+  opacity: 0.8;
+  font-weight: 500;
+  margin-left: 5px;
+  flex-shrink: 0; /* Impede que a hora seja espremida */
+}

@@ -11,7 +11,7 @@ function BetForm({ onSubmit, onClose }) {
     defaultValues: {
       nomeAposta: "",
       entradas: [{ responsavel: "", conta: "", valor: "", odd: "" }],
-      plataformaPrincipal: "", // Campo para guardar a plataforma principal
+      plataformaPrincipal: "",
     },
   });
 
@@ -20,13 +20,11 @@ function BetForm({ onSubmit, onClose }) {
     name: "entradas",
   });
 
-  // "Assiste" as mudanças nas entradas para atualizar as opções de rádio dinamicamente
   const entradas = useWatch({
     control,
     name: "entradas",
   });
 
-  // Suas listas de contas e responsáveis
   const accounts = [
     "Betano",
     "Betfair",
@@ -56,10 +54,15 @@ function BetForm({ onSubmit, onClose }) {
   ];
   const responsaveis = ["Gabriel", "Giovanna", "Leleco"];
 
-  // Formata os dados antes de enviar para a API
+  // --- FUNÇÃO DE SUBMISSÃO ATUALIZADA ---
   const onFormSubmit = (data) => {
+    // Pega a data de hoje e formata para 'AAAA-MM-DD'
+    const hoje = new Date();
+    const dataFormatada = hoje.toISOString().split("T")[0];
+
     const formattedData = {
       ...data,
+      data: dataFormatada, // Adiciona o campo de data formatado
       entradas: data.entradas.map((entry) => ({
         ...entry,
         valor: parseFloat(entry.valor),
@@ -74,12 +77,12 @@ function BetForm({ onSubmit, onClose }) {
     <div className="modal-overlay">
       <div className="modal-content">
         <form className="bet-form" onSubmit={handleSubmit(onFormSubmit)}>
+          {/* O resto do seu formulário continua exatamente igual */}
           <button type="button" onClick={onClose} className="close-modal-btn">
             &times;
           </button>
           <h2>Adicionar Nova Aposta</h2>
 
-          {/* Campo Nome da Aposta */}
           <div className="form-group">
             <label>Nome da Aposta</label>
             <input
@@ -95,7 +98,6 @@ function BetForm({ onSubmit, onClose }) {
 
           <hr className="form-divider" />
 
-          {/* Mapeamento das Entradas */}
           {fields.map((item, index) => (
             <div key={item.id} className="entry-container">
               <div className="entry-header">
@@ -110,6 +112,7 @@ function BetForm({ onSubmit, onClose }) {
                   </button>
                 )}
               </div>
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Responsável</label>
@@ -154,6 +157,7 @@ function BetForm({ onSubmit, onClose }) {
                   )}
                 </div>
               </div>
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Valor (R$)</label>
@@ -201,7 +205,6 @@ function BetForm({ onSubmit, onClose }) {
             </div>
           ))}
 
-          {/* --- NOVA SEÇÃO DE SELEÇÃO DA PLATAFORMA PRINCIPAL --- */}
           {entradas && entradas.length > 1 && (
             <div className="form-group principal-platform-selector">
               <hr className="form-divider" />
@@ -233,7 +236,6 @@ function BetForm({ onSubmit, onClose }) {
             </div>
           )}
 
-          {/* Botões do Formulário */}
           <div className="form-button-group">
             <button
               type="button"
