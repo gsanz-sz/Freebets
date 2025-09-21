@@ -1,5 +1,6 @@
 import React from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
+import { RESPONSAVEIS, ACCOUNTS } from "./config"; // Importa as listas do arquivo de configuração
 
 function BetForm({ onSubmit, onClose }) {
   const {
@@ -24,35 +25,6 @@ function BetForm({ onSubmit, onClose }) {
     control,
     name: "entradas",
   });
-
-  const accounts = [
-    "Betano",
-    "Betfair",
-    "Bet365",
-    "Novibet",
-    "Estrelabet",
-    "Sportingbet",
-    "Betnacional",
-    "Superbet",
-    "Betvip",
-    "Bet7k",
-    "Cassinopix",
-    "Verabet",
-    "Pixbet",
-    "McGames",
-    "Esportivabet",
-    "BetEsporte",
-    "Rei do Pitaco",
-    "Multibet",
-    "Bet-Bra",
-    "Alfabet",
-    "Fullbet",
-    "Aposta1",
-    "Matchbook",
-    "BrBet",
-    "Flabet",
-  ];
-  const responsaveis = ["Gabriel", "Giovanna", "Leleco"];
 
   // --- FUNÇÃO DE SUBMISSÃO ATUALIZADA ---
   const onFormSubmit = (data) => {
@@ -123,7 +95,7 @@ function BetForm({ onSubmit, onClose }) {
                     })}
                   >
                     <option value="">Selecione...</option>
-                    {responsaveis.map((r) => (
+                    {RESPONSAVEIS.map((r) => (
                       <option key={r} value={r}>
                         {r}
                       </option>
@@ -144,7 +116,7 @@ function BetForm({ onSubmit, onClose }) {
                     })}
                   >
                     <option value="">Selecione...</option>
-                    {accounts.map((acc) => (
+                    {ACCOUNTS.map((acc) => (
                       <option key={acc} value={acc}>
                         {acc}
                       </option>

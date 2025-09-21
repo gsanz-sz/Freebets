@@ -3,6 +3,7 @@ const Joi = require("joi");
 // Esquema para criar uma nova aposta (já existente)
 const betSchema = Joi.object({
   nomeAposta: Joi.string().trim().required(),
+  data: Joi.string().required(),
   entradas: Joi.array()
     .items(
       Joi.object({
