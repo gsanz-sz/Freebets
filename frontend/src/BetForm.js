@@ -28,13 +28,16 @@ function BetForm({ onSubmit, onClose }) {
 
   // --- FUNÇÃO DE SUBMISSÃO ATUALIZADA ---
   const onFormSubmit = (data) => {
-    // Pega a data de hoje e formata para 'AAAA-MM-DD'
+    // Pega a data de hoje e formata para 'AAAA-MM-DD' de forma segura
     const hoje = new Date();
-    const dataFormatada = hoje.toISOString().split("T")[0];
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, "0"); // getMonth() é 0-11
+    const dia = String(hoje.getDate()).padStart(2, "0");
+    const dataFormatada = `${ano}-${mes}-${dia}`; // <--- Lógica corrigida
 
     const formattedData = {
       ...data,
-      data: dataFormatada, // Adiciona o campo de data formatado
+      data: dataFormatada, // Adiciona o campo de data formatado corretamente
       entradas: data.entradas.map((entry) => ({
         ...entry,
         valor: parseFloat(entry.valor),

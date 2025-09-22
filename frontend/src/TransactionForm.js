@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
-import { RESPONSAVEIS, ACCOUNTS } from "./config"; // Importa as listas do arquivo de configuração
+import { RESPONSAVEIS, ACCOUNTS } from "./config"; // Garanta que a importação do config.js está aqui
 
 function TransactionForm({ onSubmit, onClose, type }) {
   const [formData, setFormData] = useState({
     responsavel: "",
     plataforma: "",
     valor: "",
-    tipo: type, // Usa a prop 'type' para definir o valor inicial
+    tipo: type,
   });
 
-  // Atualiza o tipo se a prop mudar
   useEffect(() => {
     setFormData((prevData) => ({ ...prevData, tipo: type }));
   }, [type]);
@@ -24,75 +23,86 @@ function TransactionForm({ onSubmit, onClose, type }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Converte o valor para número antes de submeter
+    onSubmit({ ...formData, valor: parseFloat(formData.valor) });
+    onClose();
   };
 
   return (
-    <div
-      style={{ padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}
-    >
-      <h1>
+    // Reutilizando as classes do formulário de aposta para manter a consistência
+    <form className="bet-form" onSubmit={handleSubmit}>
+      <button type="button" onClick={onClose} className="close-modal-btn">
+        &times;
+      </button>
+
+      <h2>
         {formData.tipo === "deposito"
           ? "Adicionar Depósito"
           : "Adicionar Saque"}
-      </h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>
-            Pessoa Responsável:
-            <select
-              name="responsavel"
-              value={formData.responsavel}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione o Responsável</option>
-              {RESPONSAVEIS.map((resp) => (
-                <option key={resp} value={resp}>
-                  {resp}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div>
-          <label>
-            Plataforma:
-            <select
-              name="plataforma"
-              value={formData.plataforma}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Selecione a Plataforma</option>
-              {ACCOUNTS.map((account) => (
-                <option key={account} value={account}>
-                  {account}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div>
-          <label>
-            Valor:
-            <input
-              type="number"
-              name="valor"
-              value={formData.valor}
-              onChange={handleChange}
-              required
-            />
-          </label>
-        </div>
-        <input type="hidden" name="tipo" value={formData.tipo} />{" "}
-        {/* Campo hidden para o tipo */}
-        <button type="submit">Salvar Transação</button>
-        <button type="button" onClick={onClose} style={{ marginLeft: "10px" }}>
+      </h2>
+
+      <div className="form-group">
+        <label>Pessoa Responsável</label>
+        <select
+          name="responsavel"
+          value={formData.responsavel}
+          onChange={handleChange}
+          className="form-select"
+          required
+        >
+          <option value="">Selecione o Responsável</option>
+          {RESPONSAVEIS.map((resp) => (
+            <option key={resp} value={resp}>
+              {resp}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Plataforma</label>
+        <select
+          name="plataforma"
+          value={formData.plataforma}
+          onChange={handleChange}
+          className="form-select"
+          required
+        >
+          <option value="">Selecione a Plataforma</option>
+          {ACCOUNTS.map((account) => (
+            <option key={account} value={account}>
+              {account}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Valor (R$)</label>
+        <input
+          type="number"
+          name="valor"
+          value={formData.valor}
+          onChange={handleChange}
+          className="form-input"
+          step="0.01"
+          required
+        />
+      </div>
+
+      <div className="form-button-group">
+        <button
+          type="button"
+          onClick={onClose}
+          className="form-button secondary"
+        >
           Cancelar
         </button>
-      </form>
-    </div>
+        <button type="submit" className="form-button primary">
+          Salvar Transação
+        </button>
+      </div>
+    </form>
   );
 }
 

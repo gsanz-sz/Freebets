@@ -47,10 +47,14 @@ function BetsCalendar({ bets, onFinishBet, onDeleteBet, onUpdateBetEntry }) {
   const [selectedBet, setSelectedBet] = useState(null);
 
   const eventos = useMemo(() => {
-    return bets.map((bet) => ({
+    // Ordena as apostas pela data de criação antes de mapear
+    const sortedBets = [...bets].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+    );
+    return sortedBets.map((bet) => ({
       id: bet._id,
       title: bet.nomeAposta,
-      date: bet.data, // Agora, o FullCalendar vai ler a string 'AAAA-MM-DD'
+      date: bet.data, // A data para o calendário (ex: '2025-09-21')
       extendedProps: { bet: bet },
     }));
   }, [bets]);
@@ -68,6 +72,8 @@ function BetsCalendar({ bets, onFinishBet, onDeleteBet, onUpdateBetEntry }) {
         events={eventos}
         eventContent={renderEventoAposta}
         eventClick={handleEventClick}
+        // Adiciona a regra de ordenação dos eventos dentro de cada dia
+        eventOrder="start,title"
         headerToolbar={{
           left: "prev,next today",
           center: "title",

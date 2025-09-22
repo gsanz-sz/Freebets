@@ -25,7 +25,7 @@ const getBet = asyncHandler(async (req, res, next) => {
 router.get(
   "/bets",
   asyncHandler(async (req, res) => {
-    const bets = await Bet.find();
+    const bets = await Bet.find().sort({ createdAt: 1 });
     res.status(200).json(bets);
   })
 );

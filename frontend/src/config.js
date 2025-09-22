@@ -1,5 +1,5 @@
 // Lista centralizada de responsáveis e contas
-export const RESPONSAVEIS = ["Gabriel", "Giovanna", "Leleco", "Matheus"];
+export const RESPONSAVEIS = ["Gabriel", "Giovanna", "Leleco", "Matheus"].sort();
 
 export const ACCOUNTS = [
   "Betano",
@@ -28,7 +28,7 @@ export const ACCOUNTS = [
   "BrBet",
   "Flabet",
   "Vai de Bet",
-  "Bolsa de Aposta"
-];
+  "Bolsa de Aposta",
+].sort();
 
 // Você pode mover a lista de "accounts" para cá também para centralizar tudo!
